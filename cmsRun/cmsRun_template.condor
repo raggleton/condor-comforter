@@ -1,0 +1,21 @@
+Executable = SEDEXE
+Universe = vanilla
+Output = jobs/SEDNAME.$(cluster).$(process).out
+Error = jobs/SEDNAME.$(cluster).$(process).err
+Log = jobs/SEDNAME.$(cluster).$(process).log
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+notify_user = robin.aggleton@bristol.ac.uk
+
+request_cpus = 1
+request_memory = 2GB
+request_disk = 500MB
+
+use_x509userproxy = True
+# use the ENV that is provided
+getenv = true
+transfer_input_files = SEDINPUTFILES
+# initialdir = SEDINITIAL
+arguments = SEDARGS
+
+queue SEDNJOBS
