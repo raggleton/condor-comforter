@@ -1,0 +1,15 @@
+executable=testcode.sh
+output=test.A.out
+error=test.A.err
+log=test.A.log
+Universe = vanilla
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+notify_user = robin.aggleton@bristol.ac.uk
+
+request_cpus = 1
+request_memory = 500
+getenv = true
+
+arguments = A
+queue

@@ -1,0 +1,16 @@
+# This is an example DAG job descirption file
+# submit it with:
+# condor_submit_dag diamond.dag
+# you can then monitor the output in "diamond.status",
+# which will update every 10s. 
+# You can also view the node setup visually, by running
+# dot -Tjpeg diamond.dot -o diamond.jpeg
+# after submission.
+JOB  A  A.condor 
+JOB  B  B.condor 
+JOB  C  C.condor	
+JOB  D  D.condor
+PARENT A CHILD B C
+PARENT B C CHILD D
+NODE_STATUS_FILE diamond.status 10
+DOT diamond.dot
