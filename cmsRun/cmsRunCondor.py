@@ -64,7 +64,9 @@ def cmsRunCondor(in_args):
         log.error("You can't have --filesPerJob > --totalFiles!")
         raise RuntimeError
 
-    output_summary = subprocess.check_output(['das_client.py','--query', 'summary dataset=%s' % args.dataset], stderr=subprocess.STDOUT)
+    output_summary = subprocess.check_output(['das_client.py','--query',
+                                              'summary dataset=%s' % args.dataset],
+                                              stderr=subprocess.STDOUT)
     log.debug(output_summary)
 
     if 'nfiles' not in output_summary:
@@ -84,7 +86,10 @@ def cmsRunCondor(in_args):
     total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
 
     # Make a list of files for each job to avoid doing it on worker node side:
-    output_files = subprocess.check_output(['das_client.py','--query', 'file dataset=%s' % args.dataset, '--limit=%d' % args.totalFiles], stderr=subprocess.STDOUT)
+    output_files = subprocess.check_output(['das_client.py','--query',
+                                            'file dataset=%s' % args.dataset,
+                                            '--limit=%d' % args.totalFiles],
+                                            stderr=subprocess.STDOUT)
 
     list_of_files = ['"%s"' % line for line in output_files.splitlines() if line.lower().startswith("/store")]
 
