@@ -2,15 +2,19 @@
 """
 Code to interpret a DAGman status output, and present it in a more user-friendly manner.
 
+Make sure you have NODE_STATUS_FILE set in your DAD job file.
+
+USAGE:
+
+./status.py <name of DAG status file>
+
 TODO:
 - maybe use namedtuples instead of full-blown classes?
-- help info?
+- use argparse
 """
-
 
 import sys
 import logging
-from pprint import pprint
 import re
 import os
 from collections import OrderedDict

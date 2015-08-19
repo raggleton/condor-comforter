@@ -7,6 +7,8 @@ Please report any issues, and add any helpful scripts for other users!
 
 I take no responsibility for your results using these - with great power comes great potential for DDOS'ing DAS.
 
+Robin Aggleton
+
 ##cmsRunCondor
 
 This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
