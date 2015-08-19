@@ -1,5 +1,10 @@
+#!/usr/bin/env python
 """
 Code to interpret a DAGman status output, and present it in a more user-friendly manner.
+
+TODO:
+- maybe use namedtuples instead of full-blown classes?
+- help info?
 """
 
 
@@ -175,4 +180,9 @@ def print_table(dag_status, node_statuses, status_end):
 
 
 if __name__ == "__main__":
-    process(sys.argv[1])
+    if len(sys.argv) != 2:
+        print "Usage:"
+        print "    python status.py <dag status file>"
+        exit(1)
+    else:
+        process(sys.argv[1])
