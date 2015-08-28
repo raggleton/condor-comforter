@@ -7,6 +7,9 @@ should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 notify_user = robin.aggleton@bristol.ac.uk
 
+accounting_group = group_physics.hep
+account_group_user = SEDWHOAMI
+
 request_cpus = 1
 request_memory = 2GB
 request_disk = 500MB
