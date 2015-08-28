@@ -1,0 +1,468 @@
+[20:31:22]:/users/ra12451/L1JEC/CMSSW_7_4_2/src/L1Trigger/L1JetEnergyCorrections/python >> cmsRun SimL1Emulator_Stage1_newRCT.py
+# Conditions read from  CMS_CONDITIONS  via FrontierProd
+*** Using new RCT calibs
+*** Writing NTuple to L1Tree_Stage1_MCRUN2_74_V9_jetSeed5_stage1v2_rctv4.root
+27-Aug-2015 20:32:17 BST  Initiating request to open file file:/hdfs/dpm/phy.bris.ac.uk/home/cms/store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0011C312-7701-E511-B156-0025905C94D2.root
+27-Aug-2015 20:32:17 BST  Fallback request to file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0011C312-7701-E511-B156-0025905C94D2.root
+%MSG-w XrdAdaptor:  file_open 27-Aug-2015 20:32:18 BST pre-events
+Data is served from desy.de instead of original site infn.it
+%MSG
+27-Aug-2015 20:32:20 BST  Successfully opened file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0011C312-7701-E511-B156-0025905C94D2.root
+Begin processing the 1st record. Run 1, Event 200144, LumiSection 1523 at 27-Aug-2015 20:32:26.357 BST
+Begin processing the 201st record. Run 1, Event 200344, LumiSection 1524 at 27-Aug-2015 20:32:49.856 BST
+Begin processing the 401st record. Run 1, Event 203963, LumiSection 1551 at 27-Aug-2015 20:33:11.605 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:33:17 BST  Run: 1 Event: 204014
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:33:17 BST  Run: 1 Event: 204014
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:33:26 BST  Run: 1 Event: 204072
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:33:26 BST  Run: 1 Event: 204072
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 601st record. Run 1, Event 205215, LumiSection 1561 at 27-Aug-2015 20:33:36.826 BST
+Begin processing the 801st record. Run 1, Event 236186, LumiSection 1797 at 27-Aug-2015 20:34:00.622 BST
+Begin processing the 1001st record. Run 1, Event 236386, LumiSection 1798 at 27-Aug-2015 20:34:22.242 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:34:43 BST  Run: 1 Event: 304691
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:34:43 BST  Run: 1 Event: 304691
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 1201st record. Run 1, Event 304703, LumiSection 2317 at 27-Aug-2015 20:34:44.463 BST
+Begin processing the 1401st record. Run 1, Event 321998, LumiSection 2449 at 27-Aug-2015 20:35:06.013 BST
+Begin processing the 1601st record. Run 1, Event 315623, LumiSection 2401 at 27-Aug-2015 20:35:28.284 BST
+Begin processing the 1801st record. Run 1, Event 315823, LumiSection 2402 at 27-Aug-2015 20:35:50.060 BST
+Begin processing the 2001st record. Run 1, Event 832029, LumiSection 6327 at 27-Aug-2015 20:36:12.527 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:36:15 BST  Run: 1 Event: 832052
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:36:15 BST  Run: 1 Event: 832052
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 2201st record. Run 1, Event 947686, LumiSection 7207 at 27-Aug-2015 20:36:35.127 BST
+27-Aug-2015 20:36:53 BST  Closed file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0011C312-7701-E511-B156-0025905C94D2.root
+27-Aug-2015 20:36:53 BST  Initiating request to open file file:/hdfs/dpm/phy.bris.ac.uk/home/cms/store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00530282-DC00-E511-8451-001E68654246.root
+27-Aug-2015 20:36:53 BST  Fallback request to file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00530282-DC00-E511-8451-001E68654246.root
+%MSG-w XrdAdaptor:  file_open 27-Aug-2015 20:36:53 BST PostProcessEvent
+Data is served from desy.de instead of original site infn.it
+%MSG
+27-Aug-2015 20:36:53 BST  Successfully opened file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00530282-DC00-E511-8451-001E68654246.root
+Begin processing the 2401st record. Run 1, Event 1382099, LumiSection 10511 at 27-Aug-2015 20:36:59.236 BST
+Begin processing the 2601st record. Run 1, Event 1382299, LumiSection 10512 at 27-Aug-2015 20:37:21.929 BST
+Begin processing the 2801st record. Run 1, Event 1425894, LumiSection 10843 at 27-Aug-2015 20:37:44.108 BST
+Begin processing the 3001st record. Run 1, Event 1469752, LumiSection 11177 at 27-Aug-2015 20:38:06.830 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:38:22 BST  Run: 1 Event: 1469893
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:38:22 BST  Run: 1 Event: 1469893
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 3201st record. Run 1, Event 2728407, LumiSection 20749 at 27-Aug-2015 20:38:29.137 BST
+Begin processing the 3401st record. Run 1, Event 2728607, LumiSection 20750 at 27-Aug-2015 20:38:50.723 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:03 BST  Run: 1 Event: 2739481
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:03 BST  Run: 1 Event: 2739481
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:11 BST  Run: 1 Event: 2739557
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:11 BST  Run: 1 Event: 2739557
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:13 BST  Run: 1 Event: 2739576
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:13 BST  Run: 1 Event: 2739576
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 3601st record. Run 1, Event 2739590, LumiSection 20833 at 27-Aug-2015 20:39:15.089 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:17 BST  Run: 1 Event: 2739620
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:17 BST  Run: 1 Event: 2739620
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 3801st record. Run 1, Event 2827895, LumiSection 21505 at 27-Aug-2015 20:39:36.726 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:39 BST  Run: 1 Event: 2827920
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:39:39 BST  Run: 1 Event: 2827920
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 4001st record. Run 1, Event 3259678, LumiSection 24789 at 27-Aug-2015 20:39:58.974 BST
+Begin processing the 4201st record. Run 1, Event 3259878, LumiSection 24790 at 27-Aug-2015 20:40:20.349 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:40:28 BST  Run: 1 Event: 3261004
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:40:28 BST  Run: 1 Event: 3261004
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 4401st record. Run 1, Event 3261130, LumiSection 24799 at 27-Aug-2015 20:40:42.875 BST
+Begin processing the 4601st record. Run 1, Event 3364163, LumiSection 25583 at 27-Aug-2015 20:41:05.138 BST
+27-Aug-2015 20:41:19 BST  Closed file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00530282-DC00-E511-8451-001E68654246.root
+27-Aug-2015 20:41:19 BST  Initiating request to open file file:/hdfs/dpm/phy.bris.ac.uk/home/cms/store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0083661A-DD00-E511-BD46-AC853D9DAC1F.root
+27-Aug-2015 20:41:19 BST  Fallback request to file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0083661A-DD00-E511-BD46-AC853D9DAC1F.root
+%MSG-w XrdAdaptor:  file_open 27-Aug-2015 20:41:19 BST PostProcessEvent
+Data is served from desy.de instead of original site infn.it
+%MSG
+27-Aug-2015 20:41:19 BST  Successfully opened file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0083661A-DD00-E511-BD46-AC853D9DAC1F.root
+Begin processing the 4801st record. Run 1, Event 298046, LumiSection 2267 at 27-Aug-2015 20:41:29.016 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:41:31 BST  Run: 1 Event: 298062
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:41:31 BST  Run: 1 Event: 298062
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 5001st record. Run 1, Event 404498, LumiSection 3077 at 27-Aug-2015 20:41:51.528 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:42:01 BST  Run: 1 Event: 404580
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:42:01 BST  Run: 1 Event: 404580
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 5201st record. Run 1, Event 404698, LumiSection 3078 at 27-Aug-2015 20:42:13.831 BST
+Begin processing the 5401st record. Run 1, Event 444874, LumiSection 3383 at 27-Aug-2015 20:42:35.986 BST
+Begin processing the 5601st record. Run 1, Event 785922, LumiSection 5977 at 27-Aug-2015 20:42:57.575 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:06 BST  Run: 1 Event: 785997
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:06 BST  Run: 1 Event: 785997
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:16 BST  Run: 1 Event: 786082
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:16 BST  Run: 1 Event: 786082
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 5801st record. Run 1, Event 881328, LumiSection 6703 at 27-Aug-2015 20:43:20.544 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:24 BST  Run: 1 Event: 881367
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:24 BST  Run: 1 Event: 881367
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 6001st record. Run 1, Event 881528, LumiSection 6704 at 27-Aug-2015 20:43:42.736 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:56 BST  Run: 1 Event: 891653
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:43:56 BST  Run: 1 Event: 891653
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 6201st record. Run 1, Event 891722, LumiSection 6781 at 27-Aug-2015 20:44:04.565 BST
+Begin processing the 6401st record. Run 1, Event 2078315, LumiSection 15805 at 27-Aug-2015 20:44:26.942 BST
+Begin processing the 6601st record. Run 1, Event 2088246, LumiSection 15881 at 27-Aug-2015 20:44:48.794 BST
+Begin processing the 6801st record. Run 1, Event 2088446, LumiSection 15882 at 27-Aug-2015 20:45:12.046 BST
+Begin processing the 7001st record. Run 1, Event 2088646, LumiSection 15883 at 27-Aug-2015 20:45:36.568 BST
+27-Aug-2015 20:45:47 BST  Closed file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/0083661A-DD00-E511-BD46-AC853D9DAC1F.root
+27-Aug-2015 20:45:47 BST  Initiating request to open file file:/hdfs/dpm/phy.bris.ac.uk/home/cms/store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/008C35C6-7B01-E511-AE3C-0025904C650A.root
+27-Aug-2015 20:45:47 BST  Fallback request to file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/008C35C6-7B01-E511-AE3C-0025904C650A.root
+%MSG-w XrdAdaptor:  file_open 27-Aug-2015 20:45:48 BST PostProcessEvent
+Data is served from desy.de instead of original site infn.it
+%MSG
+27-Aug-2015 20:45:48 BST  Successfully opened file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/008C35C6-7B01-E511-AE3C-0025904C650A.root
+Begin processing the 7201st record. Run 1, Event 69532, LumiSection 529 at 27-Aug-2015 20:46:01.368 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:46:23 BST  Run: 1 Event: 74460
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:46:23 BST  Run: 1 Event: 74460
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 7401st record. Run 1, Event 74466, LumiSection 567 at 27-Aug-2015 20:46:23.903 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:46:32 BST  Run: 1 Event: 74547
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:46:32 BST  Run: 1 Event: 74547
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 7601st record. Run 1, Event 74666, LumiSection 568 at 27-Aug-2015 20:46:46.613 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:47:00 BST  Run: 1 Event: 88727
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:47:00 BST  Run: 1 Event: 88727
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 7801st record. Run 1, Event 88805, LumiSection 675 at 27-Aug-2015 20:47:08.522 BST
+Begin processing the 8001st record. Run 1, Event 69806, LumiSection 531 at 27-Aug-2015 20:47:30.999 BST
+Begin processing the 8201st record. Run 1, Event 74740, LumiSection 569 at 27-Aug-2015 20:47:53.616 BST
+Begin processing the 8401st record. Run 1, Event 74940, LumiSection 570 at 27-Aug-2015 20:48:15.224 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:48:29 BST  Run: 1 Event: 346470
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:48:29 BST  Run: 1 Event: 346470
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 8601st record. Run 1, Event 346556, LumiSection 2635 at 27-Aug-2015 20:48:38.498 BST
+[2015-08-27 20:48:42.256468 +0100][Error  ][AsyncSock         ] [xrootd.ba.infn.it:1094 #0.0] Socket error encountered: [ERROR] Socket error: Resource temporarily unavailable
+[2015-08-27 20:48:42.257433 +0100][Error  ][AsyncSock         ] [xrootd-cms.infn.it:1094 #0.0] Socket error encountered: [ERROR] Socket error: Resource temporarily unavailable
+Begin processing the 8801st record. Run 1, Event 72184, LumiSection 549 at 27-Aug-2015 20:49:01.054 BST
+Begin processing the 9001st record. Run 1, Event 73962, LumiSection 563 at 27-Aug-2015 20:49:23.470 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:49:33 BST  Run: 1 Event: 74061
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:49:33 BST  Run: 1 Event: 74061
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 9201st record. Run 1, Event 74162, LumiSection 564 at 27-Aug-2015 20:49:45.240 BST
+Begin processing the 9401st record. Run 1, Event 74362, LumiSection 565 at 27-Aug-2015 20:50:07.845 BST
+27-Aug-2015 20:50:15 BST  Closed file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/008C35C6-7B01-E511-AE3C-0025904C650A.root
+27-Aug-2015 20:50:15 BST  Initiating request to open file file:/hdfs/dpm/phy.bris.ac.uk/home/cms/store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00DC924C-7A01-E511-B879-0025905C2D9A.root
+27-Aug-2015 20:50:15 BST  Fallback request to file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00DC924C-7A01-E511-B879-0025905C2D9A.root
+%MSG-w XrdAdaptor:  file_open 27-Aug-2015 20:50:15 BST PostProcessEvent
+Data is served from desy.de instead of original site infn.it
+%MSG
+27-Aug-2015 20:50:16 BST  Successfully opened file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00DC924C-7A01-E511-B879-0025905C2D9A.root
+Begin processing the 9601st record. Run 1, Event 2175669, LumiSection 16545 at 27-Aug-2015 20:50:32.409 BST
+%MSG-w XrdAdaptor:  (NoModuleName) 27-Aug-2015 20:50:34 BST pre-events
+Data is now served from desy.de, ihep.ac.cn instead of previous desy.de
+%MSG
+%MSG-w XrdAdaptor:  PreProcPath p 27-Aug-2015 20:50:39 BST Run: 1 Event: 2175721
+Data is now served from desy.de instead of previous desy.de, ihep.ac.cn
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:50:41 BST  Run: 1 Event: 2175734
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:50:41 BST  Run: 1 Event: 2175734
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:50:52 BST  Run: 1 Event: 3288327
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:50:52 BST  Run: 1 Event: 3288327
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 9801st record. Run 1, Event 3288359, LumiSection 25007 at 27-Aug-2015 20:50:55.942 BST
+Begin processing the 10001st record. Run 1, Event 3289348, LumiSection 25015 at 27-Aug-2015 20:51:17.523 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:51:27 BST  Run: 1 Event: 3289432
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:51:27 BST  Run: 1 Event: 3289432
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:51:39 BST  Run: 1 Event: 3289536
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:51:39 BST  Run: 1 Event: 3289536
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 10201st record. Run 1, Event 3289548, LumiSection 25016 at 27-Aug-2015 20:51:40.950 BST
+Begin processing the 10401st record. Run 1, Event 2193564, LumiSection 16681 at 27-Aug-2015 20:52:05.602 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:52:11 BST  Run: 1 Event: 2193619
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:52:11 BST  Run: 1 Event: 2193619
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 10601st record. Run 1, Event 2194027, LumiSection 16685 at 27-Aug-2015 20:52:27.908 BST
+Begin processing the 10801st record. Run 1, Event 3325390, LumiSection 25289 at 27-Aug-2015 20:52:49.247 BST
+Begin processing the 11001st record. Run 1, Event 3325590, LumiSection 25290 at 27-Aug-2015 20:53:11.491 BST
+Begin processing the 11201st record. Run 1, Event 2903149, LumiSection 22077 at 27-Aug-2015 20:53:33.204 BST
+Begin processing the 11401st record. Run 1, Event 2956212, LumiSection 22481 at 27-Aug-2015 20:53:55.316 BST
+Begin processing the 11601st record. Run 1, Event 2964039, LumiSection 22541 at 27-Aug-2015 20:54:17.506 BST
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:54:19 BST  Run: 1 Event: 2964062
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:54:19 BST  Run: 1 Event: 2964062
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e CSCTFUnpacker:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:54:25 BST  Run: 1 Event: 2964109
+ problem of unpacking TF event: 0x10 code
+%MSG
+%MSG-e produce:  CSCTFUnpacker:csctfDigis 27-Aug-2015 20:54:25 BST  Run: 1 Event: 2964109
+ problem of unpacking TF event: 0x10 code
+%MSG
+Begin processing the 11801st record. Run 1, Event 2964239, LumiSection 22542 at 27-Aug-2015 20:54:39.104 BST
+27-Aug-2015 20:54:42 BST  Closed file root://xrootd-cms.infn.it//store/mc/RunIISpring15Digi74/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/AVE_20_BX_25ns_tsg_MCRUN2_74_V7-v2/80000/00DC924C-7A01-E511-B879-0025905C2D9A.root
+
+TrigReport ---------- Event  Summary ------------
+TrigReport Events total = 11835 passed = 11835 failed = 0
+
+TrigReport ---------- Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+TrigReport     1    0      11835      11835          0          0 p
+
+TrigReport -------End-Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+
+TrigReport ---------- Modules in Path: p ------------
+TrigReport  Trig Bit#    Visited     Passed     Failed      Error Name
+TrigReport     1    0      11835      11835          0          0 csctfDigis
+TrigReport     1    1      11835      11835          0          0 dttfDigis
+TrigReport     1    2      11835      11835          0          0 gctDigis
+TrigReport     1    3      11835      11835          0          0 gtDigis
+TrigReport     1    4      11835      11835          0          0 gtEvmDigis
+TrigReport     1    5      11835      11835          0          0 siPixelDigis
+TrigReport     1    6      11835      11835          0          0 siStripDigis
+TrigReport     1    7      11835      11835          0          0 ecalDigis
+TrigReport     1    8      11835      11835          0          0 ecalPreshowerDigis
+TrigReport     1    9      11835      11835          0          0 hcalDigis
+TrigReport     1   10      11835      11835          0          0 muonCSCDigis
+TrigReport     1   11      11835      11835          0          0 muonDTDigis
+TrigReport     1   12      11835      11835          0          0 muonRPCDigis
+TrigReport     1   13      11835      11835          0          0 castorDigis
+TrigReport     1   14      11835      11835          0          0 scalersRawToDigi
+TrigReport     1   15      11835      11835          0          0 simRctDigis
+TrigReport     1   16      11835      11835          0          0 simRctUpgradeFormatDigis
+TrigReport     1   17      11835      11835          0          0 simCaloStage1Digis
+TrigReport     1   18      11835      11835          0          0 simCaloStage1FinalDigis
+TrigReport     1   19      11835      11835          0          0 simCaloStage1LegacyFormatDigis
+TrigReport     1   20      11835      11835          0          0 l1ExtraLayer2
+TrigReport     1   21      11835      11835          0          0 preGtJetToL1Jet
+TrigReport     1   22      11835      11835          0          0 genJetToL1JetAk4
+TrigReport     1   23      11835      11835          0          0 l1ExtraTreeProducer
+TrigReport     1   24      11835      11835          0          0 l1ExtraTreeProducerIntern
+TrigReport     1   25      11835      11835          0          0 l1ExtraTreeProducerGenAk4
+TrigReport     1   26      11835      11835          0          0 puInfo
+TrigReport     1   27      11835      11835          0          0 l1NtupleProducer
+
+TrigReport ---------- Module Summary ------------
+TrigReport    Visited   Executed     Passed     Failed      Error Name
+TrigReport      11835      11835      11835          0          0 csctfDigis
+TrigReport      11835      11835      11835          0          0 dttfDigis
+TrigReport      11835      11835      11835          0          0 gctDigis
+TrigReport      11835      11835      11835          0          0 gtDigis
+TrigReport      11835      11835      11835          0          0 gtEvmDigis
+TrigReport      11835      11835      11835          0          0 siPixelDigis
+TrigReport      11835      11835      11835          0          0 siStripDigis
+TrigReport      11835      11835      11835          0          0 ecalDigis
+TrigReport      11835      11835      11835          0          0 ecalPreshowerDigis
+TrigReport      11835      11835      11835          0          0 hcalDigis
+TrigReport      11835      11835      11835          0          0 muonCSCDigis
+TrigReport      11835      11835      11835          0          0 muonDTDigis
+TrigReport      11835      11835      11835          0          0 muonRPCDigis
+TrigReport      11835      11835      11835          0          0 castorDigis
+TrigReport      11835      11835      11835          0          0 scalersRawToDigi
+TrigReport      11835      11835      11835          0          0 simRctDigis
+TrigReport      11835      11835      11835          0          0 simRctUpgradeFormatDigis
+TrigReport      11835      11835      11835          0          0 simCaloStage1Digis
+TrigReport      11835      11835      11835          0          0 simCaloStage1FinalDigis
+TrigReport      11835      11835      11835          0          0 simCaloStage1LegacyFormatDigis
+TrigReport      11835      11835      11835          0          0 l1ExtraLayer2
+TrigReport      11835      11835      11835          0          0 preGtJetToL1Jet
+TrigReport      11835      11835      11835          0          0 genJetToL1JetAk4
+TrigReport      11835      11835      11835          0          0 l1ExtraTreeProducer
+TrigReport      11835      11835      11835          0          0 l1ExtraTreeProducerIntern
+TrigReport      11835      11835      11835          0          0 l1ExtraTreeProducerGenAk4
+TrigReport      11835      11835      11835          0          0 puInfo
+TrigReport      11835      11835      11835          0          0 l1NtupleProducer
+TrigReport      11835      11835      11835          0          0 TriggerResults
+
+TimeReport ---------- Event  Summary ---[sec]----
+TimeReport       event loop CPU/event = 0.093465
+TimeReport      event loop Real/event = 0.113200
+TimeReport     sum Streams Real/event = 0.107216
+TimeReport efficiency CPU/Real/thread = 0.825665
+
+TimeReport ---------- Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport   0.104969     0.104969  p
+TimeReport  per event     per exec  Name
+
+TimeReport -------End-Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport  per event     per exec  Name
+
+TimeReport ---------- Modules in Path: p ---[Real sec]----
+TimeReport  per event    per visit  Name
+TimeReport   0.000163     0.000163  csctfDigis
+TimeReport   0.000034     0.000034  dttfDigis
+TimeReport   0.000158     0.000158  gctDigis
+TimeReport   0.000194     0.000194  gtDigis
+TimeReport   0.000046     0.000046  gtEvmDigis
+TimeReport   0.002809     0.002809  siPixelDigis
+TimeReport   0.015542     0.015542  siStripDigis
+TimeReport   0.003731     0.003731  ecalDigis
+TimeReport   0.000791     0.000791  ecalPreshowerDigis
+TimeReport   0.001773     0.001773  hcalDigis
+TimeReport   0.005289     0.005289  muonCSCDigis
+TimeReport   0.000083     0.000083  muonDTDigis
+TimeReport   0.000097     0.000097  muonRPCDigis
+TimeReport   0.000112     0.000112  castorDigis
+TimeReport   0.000038     0.000038  scalersRawToDigi
+TimeReport   0.005348     0.005348  simRctDigis
+TimeReport   0.000176     0.000176  simRctUpgradeFormatDigis
+TimeReport   0.035170     0.035170  simCaloStage1Digis
+TimeReport   0.000077     0.000077  simCaloStage1FinalDigis
+TimeReport   0.000066     0.000066  simCaloStage1LegacyFormatDigis
+TimeReport   0.000126     0.000126  l1ExtraLayer2
+TimeReport   0.000018     0.000018  preGtJetToL1Jet
+TimeReport   0.000030     0.000030  genJetToL1JetAk4
+TimeReport   0.000128     0.000128  l1ExtraTreeProducer
+TimeReport   0.000098     0.000098  l1ExtraTreeProducerIntern
+TimeReport   0.000112     0.000112  l1ExtraTreeProducerGenAk4
+TimeReport   0.000016     0.000016  puInfo
+TimeReport   0.002793     0.002793  l1NtupleProducer
+TimeReport  per event    per visit  Name
+
+TimeReport ---------- Module Summary ---[Real sec]----
+TimeReport  per event     per exec    per visit  Name
+TimeReport   0.000045     0.000045     0.000045  TriggerResults
+TimeReport   0.000163     0.000163     0.000163  csctfDigis
+TimeReport   0.000034     0.000034     0.000034  dttfDigis
+TimeReport   0.000158     0.000158     0.000158  gctDigis
+TimeReport   0.000194     0.000194     0.000194  gtDigis
+TimeReport   0.000046     0.000046     0.000046  gtEvmDigis
+TimeReport   0.002809     0.002809     0.002809  siPixelDigis
+TimeReport   0.015542     0.015542     0.015542  siStripDigis
+TimeReport   0.003731     0.003731     0.003731  ecalDigis
+TimeReport   0.000791     0.000791     0.000791  ecalPreshowerDigis
+TimeReport   0.001773     0.001773     0.001773  hcalDigis
+TimeReport   0.005289     0.005289     0.005289  muonCSCDigis
+TimeReport   0.000083     0.000083     0.000083  muonDTDigis
+TimeReport   0.000097     0.000097     0.000097  muonRPCDigis
+TimeReport   0.000112     0.000112     0.000112  castorDigis
+TimeReport   0.000038     0.000038     0.000038  scalersRawToDigi
+TimeReport   0.005348     0.005348     0.005348  simRctDigis
+TimeReport   0.000176     0.000176     0.000176  simRctUpgradeFormatDigis
+TimeReport   0.035170     0.035170     0.035170  simCaloStage1Digis
+TimeReport   0.000077     0.000077     0.000077  simCaloStage1FinalDigis
+TimeReport   0.000066     0.000066     0.000066  simCaloStage1LegacyFormatDigis
+TimeReport   0.000126     0.000126     0.000126  l1ExtraLayer2
+TimeReport   0.000018     0.000018     0.000018  preGtJetToL1Jet
+TimeReport   0.000030     0.000030     0.000030  genJetToL1JetAk4
+TimeReport   0.000128     0.000128     0.000128  l1ExtraTreeProducer
+TimeReport   0.000098     0.000098     0.000098  l1ExtraTreeProducerIntern
+TimeReport   0.000112     0.000112     0.000112  l1ExtraTreeProducerGenAk4
+TimeReport   0.000016     0.000016     0.000016  puInfo
+TimeReport   0.002793     0.002793     0.002793  l1NtupleProducer
+TimeReport  per event     per exec    per visit  Name
+
+T---Report end!
+
+
+=============================================
+
+MessageLogger Summary
+
+ type     category        sev    module        subroutine        count    total
+ ---- -------------------- -- ---------------- ----------------  -----    -----
+    1 XrdAdaptor           -w (NoModuleName)                         1        1
+    2 XrdAdaptor           -w PreProcPath p                          1        1
+    3 XrdAdaptor           -w file_open                              5        5
+    4 CSCTFUnpacker        -e CSCTFUnpacker:cs                      29       29
+    5 produce              -e CSCTFUnpacker:cs                      29       29
+    6 fileAction           -s file_close                             5        5
+    7 fileAction           -s file_open                             15       15
+
+ type    category    Examples: run/evt        run/evt          run/evt
+ ---- -------------------- ---------------- ---------------- ----------------
+    1 XrdAdaptor           pre-events
+    2 XrdAdaptor           1/2175721
+    3 XrdAdaptor           pre-events       PostProcessEvent PostProcessEvent
+    4 CSCTFUnpacker        1/204014         1/204072         1/2964109
+    5 produce              1/204014         1/204072         1/2964109
+    6 fileAction           PostProcessEvent PostProcessEvent PostEndRun
+    7 fileAction           pre-events       pre-events       PostProcessEvent
+
+Severity    # Occurrences   Total Occurrences
+--------    -------------   -----------------
+Warning                 7                   7
+Error                  58                  58
+System                 20                  20
+

@@ -1,0 +1,21 @@
+TIME,EVENT
+27-Aug-2015 20:32:17 BST,Initiating request to open file 
+27-Aug-2015 20:32:17 BST,Fallback request to file 
+27-Aug-2015 20:32:20 BST,Successfully opened file 
+27-Aug-2015 20:36:53 BST,Closed file 
+27-Aug-2015 20:36:53 BST,Initiating request to open file 
+27-Aug-2015 20:36:53 BST,Fallback request to file 
+27-Aug-2015 20:36:53 BST,Successfully opened file 
+27-Aug-2015 20:41:19 BST,Closed file 
+27-Aug-2015 20:41:19 BST,Initiating request to open file 
+27-Aug-2015 20:41:19 BST,Fallback request to file 
+27-Aug-2015 20:41:19 BST,Successfully opened file 
+27-Aug-2015 20:45:47 BST,Closed file 
+27-Aug-2015 20:45:47 BST,Initiating request to open file 
+27-Aug-2015 20:45:47 BST,Fallback request to file 
+27-Aug-2015 20:45:48 BST,Successfully opened file 
+27-Aug-2015 20:50:15 BST,Closed file 
+27-Aug-2015 20:50:15 BST,Initiating request to open file 
+27-Aug-2015 20:50:15 BST,Fallback request to file 
+27-Aug-2015 20:50:16 BST,Successfully opened file 
+27-Aug-2015 20:54:42 BST,Closed file 
