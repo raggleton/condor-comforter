@@ -77,7 +77,7 @@ echo ""
 ######################
 mv $worker/$script .
 mv $worker/fileList* .
-scram b -j9
+scram b
 ls
 
 ######################
