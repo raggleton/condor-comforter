@@ -3,4 +3,4 @@
 echo `hostname`
 echo $@
 ls -l
-sleep 30
+sleep 120
