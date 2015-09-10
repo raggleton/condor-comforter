@@ -3,7 +3,7 @@
   DagFiles = {
     "diamond.dag"
   };
-  Timestamp = 1439892491; /* "Tue Aug 18 11:08:11 2015" */
+  Timestamp = 1441719970; /* "Tue Sep  8 14:46:10 2015" */
   DagStatus = 5; /* "STATUS_DONE (success)" */
   NodesTotal = 4;
   NodesDone = 4;
@@ -54,6 +54,6 @@
 ]
 [
   Type = "StatusEnd";
-  EndTime = 1439892491; /* "Tue Aug 18 11:08:11 2015" */
+  EndTime = 1441719970; /* "Tue Sep  8 14:46:10 2015" */
   NextUpdate = 0; /* "none" */
 ]

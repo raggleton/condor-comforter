@@ -1,15 +1,23 @@
-# This is an example DAG job descirption file
-# submit it with:
+# This is an example DAG job description file.
+# Submit it with:
 # condor_submit_dag diamond.dag
-# you can then monitor the output in "diamond.status",
+#
+# You can then monitor the output in "diamond.status",
 # which will update every 10s. 
+#
 # You can also view the node setup visually, by running
 # dot -Tjpeg diamond.dot -o diamond.jpeg
 # after submission.
-JOB  A  A.condor 
-JOB  B  B.condor 
-JOB  C  C.condor	
-JOB  D  D.condor
+#
+JOB  A  job.condor
+VARS  A  opt="A"
+RETRY A 3
+JOB  B  job.condor
+VARS  B  opt="B"
+JOB  C  job.condor
+VARS  C  opt="C"
+JOB  D  job.condor
+VARS  D  opt="D"
 PARENT A CHILD B C
 PARENT B C CHILD D
 NODE_STATUS_FILE diamond.status 10
