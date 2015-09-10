@@ -12,13 +12,27 @@ Robin Aggleton
 ##cmsRunCondor
 
 This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
-Very much a work in progress!
+Currently supports output to /hdfs only at the moment.
 
-TODO:
-- figure out how to use user's code, not clone from git
-- use the fact that /users is readable
+Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one dataset with a config file.
+
+Brief example:
+
+```
+./cmsRunCondor.py --config pset_tutorial_analysis.py --outputDir /hdfs/user/$LOGNAME/test --dataset /QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-AsymptFlat0to50bx25Reco_MCRUN2_74_V9-v3/GEN-SIM-RECO --totalFiles 2 --filesPerJob 1
+```
 
 ##exampleDAG
 
-This holds a simple example of a DAG (directed acyclic graph), i.e. a cool way to schedule various jobs, each of which can depend on other jobs.
-Also includes a neat little monitoring script for DAG jobs
+This holds a simple example of a DAG (directed acyclic graph), i.e. a nice way to schedule various jobs, each of which can depend on other jobs.
+It shows how to setup and 'connect' jobs with parent-child relationships, and how to pass variables to the condor job file.
+
+Start from: [diamond.dag](exampleDAG/diamond.dag)
+
+Also includes a neat little monitoring script for DAG jobs, [DAGstatus.py](exampleDAG/DAGstatus.py)
+
+##simpleJob
+
+A very simple condor job file to run a script on the worker node.
+
+Start from: [script.job](simpleJob/script.job)
