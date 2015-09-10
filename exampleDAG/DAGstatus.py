@@ -68,7 +68,8 @@ class DagStatus(ClassAd):
                  nodes_unready,
                  nodes_failed,
                  job_procs_held,
-                 job_procs_idle):
+                 job_procs_idle,
+                 node_statuses=None):
         self.timestamp = timestamp
         self.dag_status = strip_doublequotes(dag_status)
         self.nodes_total = int(nodes_total)
@@ -81,8 +82,20 @@ class DagStatus(ClassAd):
         self.nodes_failed = int(nodes_failed)
         self.job_procs_held = int(job_procs_held)
         self.job_procs_idle = int(job_procs_idle)
-        self.nodes_done_percent = round(100. * self.nodes_done / self.nodes_total)
-        self.job_procs_running = self.nodes_total - self.job_procs_held - self.nodes_queued - self.nodes_done - self.nodes_failed
+        self.nodes_done_percent = "{:.1f}".format(100. * self.nodes_done / self.nodes_total)
+        self._job_procs_running = 0
+        # self.job_procs_running = 0
+        self.node_statuses = node_statuses if node_statuses else []
+
+    @property
+    def job_procs_running(self):
+        return len([n for n in self.node_statuses
+                    if n.node_status == "STATUS_SUBMITTED"
+                    and n.status_details == "not_idle"])
+
+    @property
+    def nodes_running_percent(self):
+        return "{:.1f}".format(100. * self.job_procs_running / self.nodes_total)
 
 
 class NodeStatus(ClassAd):
@@ -167,7 +180,7 @@ def process(status_filename, summary):
                 line = line.replace("\n", "").replace(";", "").strip()
                 parts = line.split(" = ")
                 contents[parts[0]] = parts[1]
-
+    dag_status.node_statuses = node_statuses
     print_table(dag_status, node_statuses, status_end, summary)
 
 
@@ -180,12 +193,12 @@ def print_table(dag_status, node_statuses, status_end, summary):
     job_dict = OrderedDict()  # holds column title as key and object attribute name as value
     job_dict["Node"] = "node"
     job_dict["Status"] = "node_status"
-    job_dict["Detail"] = "status_details"
     job_dict["Retries"] = "retry_count"
+    job_dict["Detail"] = "status_details"
     # Auto-size each column - find maximum of column header and column contents
-    job_col_widths = [max([len(str(x.__dict__[v])) for x in node_statuses]+[len(k)]) for k, v in job_dict.iteritems()]
+    job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses]+[len(k)]) for k, v in job_dict.iteritems()]
     # make formatter string to be used for each row, auto calculates number of columns
-    job_format = "  |  ".join(["{{:<{}}}"]*len(job_dict.keys())).format(*job_col_widths)
+    job_format = "  |  ".join(["{{:<{}}}"] * len(job_dict.keys())).format(*job_col_widths)
     job_header = job_format.format(*job_dict.keys())
 
     # For info about summary of all jobs:
@@ -194,13 +207,13 @@ def print_table(dag_status, node_statuses, status_end, summary):
     summary_dict["Total"] = "nodes_total"
     summary_dict["Queued"] = "nodes_queued"
     summary_dict["Idle"] = "job_procs_idle"
-    # summary_dict["Ready"] = "nodes_ready"
     summary_dict["Running"] = "job_procs_running"
+    summary_dict["Running %"] = "nodes_running_percent"
     summary_dict["Failed"] = "nodes_failed"
     summary_dict["Done"] = "nodes_done"
     summary_dict["Done %"] = "nodes_done_percent"
-    summary_col_widths = [max(len(str(dag_status.__dict__[v])), len(k)) for k, v in summary_dict.iteritems()]
-    summary_format = "  |  ".join(["{{:<{}}}"]*len(summary_dict.keys())).format(*summary_col_widths)
+    summary_col_widths = [max(len(str(getattr(dag_status, v))), len(k)) for k, v in summary_dict.iteritems()]
+    summary_format = "  |  ".join(["{{:<{}}}"] * len(summary_dict.keys())).format(*summary_col_widths)
     summary_header = summary_format.format(*summary_dict.keys())
 
     # Now figure out how many char columns to occupy for the *** and ---
@@ -216,7 +229,7 @@ def print_table(dag_status, node_statuses, status_end, summary):
     if not summary:
         print "*" * columns
         # Print info for each job.
-        print bcolors.ENDC, job_header
+        print bcolors.ENDC + job_header
         print "-" * columns
         for n in node_statuses:
             print (bcolors.color(n.node_status) +
@@ -230,7 +243,7 @@ def print_table(dag_status, node_statuses, status_end, summary):
     sum_col = bcolors.ENDC
     # if summary:
     print (bcolors.color(dag_status.dag_status) +
-        summary_format.format(*[dag_status.__dict__[v] for v in summary_dict.values()]))
+        summary_format.format(*[getattr(dag_status, v) for v in summary_dict.values()]))
     if not summary:
         print bcolors.ENDC + "-" * columns
         # print time of next update
