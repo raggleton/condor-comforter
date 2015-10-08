@@ -1,8 +1,8 @@
 Executable = SEDEXE
 Universe = vanilla
-Output = jobs/SEDNAME.$(cluster).$(process).out
-Error = jobs/SEDNAME.$(cluster).$(process).err
-Log = jobs/SEDNAME.$(cluster).$(process).log
+Output = SEDLOG.$(cluster).$(process).out
+Error = SEDLOG.$(cluster).$(process).err
+Log = SEDLOG.$(cluster).$(process).log
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 notify_user =
