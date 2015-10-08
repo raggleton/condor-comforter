@@ -145,13 +145,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.totalFiles < 0:
         args.totalFiles = num_dataset_files
     elif args.totalFiles < 1:
-        args.totalFiles *= num_dataset_files
+        args.totalFiles = math.ceil(num_dataset_files * args.totalFiles)
     elif args.totalFiles > num_dataset_files:
         log.warning("You specified more files than exist. Using all %d files.",
                     num_dataset_files)
+        args.totalFiles = num_dataset_files
 
-    # Figure out correct number of jobs
-    total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
+    log.debug('TotalFiles %f' % args.totalFiles)
 
     ###########################################################################
     # Make a list of input files for each job to avoid doing it on worker node
@@ -232,7 +232,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Make a condor submission script
     ###########################################################################
-    log.debug("Will be submitting %d jobs, running over %d files",
+    # Figure out correct number of jobs
+    total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
+    log.info("Will be submitting %d jobs, running over %d files",
               total_num_jobs, args.totalFiles)
 
     script_dir = os.path.dirname(__file__)
