@@ -7,15 +7,14 @@ Bit rudimentary. See options with:
 
 cmsRunCondor.py --help
 
-Note that it automatically sets the correct input files, providing you give it a
-dataset and specify filesPerJob, and totalFiles.
+Note that it automatically sets the correct input files, providing you give it
+a dataset and specify filesPerJob, and totalFiles.
 
 Robin Aggleton 2015, in a rush
 """
 
 
 import os
-import re
 import sys
 import json
 import math
@@ -51,8 +50,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         type=int, default=5)
     parser.add_argument("--totalFiles",
                         help="Total number of files to run over. "
-                        "Default is ALL (-1). Also acceptable is a fraction of "
-                        "the whole dataset (0 - 1), or an integer number of files.",
+                        "Default is ALL (-1). Also acceptable is a fraction of"
+                        " the whole dataset (0-1), or an integer number of files.",
                         type=float, default=-1)
     parser.add_argument("--outputScript",
                         help="Optional: name of condor submission script. "
@@ -61,15 +60,18 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         help="Extra printout to clog up your screen.",
                         action='store_true')
     parser.add_argument("--dry",
-                        help="Dry-run: only make condor submission script, don't submit to queue.",
+                        help="Dry-run: only make condor submission script, "
+                        "don't submit to queue.",
                         action='store_true')
     parser.add_argument("--dag",
                         help="If you want to run as part of a condor DAG. "
-                        "This will queue only 1 job, and the job number is instead "
-                        "specified by the variable $(index), which should be specified in the DAG script.",
+                        "This will queue only 1 job, and the job number is "
+                        "instead specified by the variable $(index), which "
+                        "should be specified in the DAG script.",
                         action='store_true')
     parser.add_argument('--log',
-                        help="Location to store job stdout/err/log files. Default is $PWD/jobs.",
+                        help="Location to store job stdout/err/log files. "
+                        "Default is $PWD/jobs.",
                         default='jobs')
     args = parser.parse_args(args=in_args)
 
@@ -157,11 +159,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Make a list of input files for each job to avoid doing it on worker node
     ###########################################################################
+    # TODO: use das_client API
     cmds = ['das_client.py',
             '--query',
             'file dataset=%s' % args.dataset,
             '--limit=%d' % args.totalFiles]
     output_files = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+    # TODO add in check incase das_client failed fwr
 
     list_of_files = ['"{0}"'.format(line) for line in output_files.splitlines()
                      if line.lower().startswith("/store")]
