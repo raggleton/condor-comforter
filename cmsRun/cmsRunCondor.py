@@ -235,7 +235,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     log.debug("Will be submitting %d jobs, running over %d files",
               total_num_jobs, args.totalFiles)
 
-    with open('cmsRun_template.condor') as template:
+    script_dir = os.path.dirname(__file__)
+    with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
         job_template = template.read()
 
     config_filename = os.path.basename(args.config)
@@ -250,13 +251,14 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         os.makedirs("jobs/%s" % log_dir)
     job = job.replace("SEDNAME", log_str)
 
+    # Construct args to pass to cmsRun_worker.sh on the worker node
     args_dict = dict(output=args.outputDir,
                      ind="index" if args.dag else "process",
                      sandbox=sandbox_location)
     args_str = "-o {output} -i $({ind}) -a $ENV(SCRAM_ARCH) " \
                "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
     job = job.replace("SEDARGS", args_str)
-    job = job.replace("SEDEXE", 'cmsRun_worker.sh')
+    job = job.replace("SEDEXE", os.path.join(script_dir, 'cmsRun_worker.sh'))
     job = job.replace("SEDNJOBS", str(1) if args.dag else str(total_num_jobs))
     # transfers = [os.path.abspath(args.config), input_file_list, sandbox_file]
     transfers = []
