@@ -1,44 +1,72 @@
 """
-Equivalent of the crab3 scripts, this creates jobs on the HTCondor system running
-over various datasets. It submits them as a DAG, which means you can a) easily
-monitor them with DAGstatus.py, and b) easily resubmit failed ones.
+Equivalent of the crab3 scripts, this creates jobs on the HTCondor system
+running over various datasets. It submits them as a DAG, which means you can
+a) easily monitor them with DAGstatus.py, and b) easily resubmit failed ones.
 
 User must select the correct config file, outputDir, and dataset(s).
 
-The datasets must be the name of their keys in the samples dict (in mc_scamples or data_samples)
+For the dataset(s), add in an entry to the samples dict. The key is a shorthand
+identifier, used for script names and output directory. The value is a Dataset
+namedtuple, which just needs the actual dataset names, the units (i.e. files)
+per job, and the total number of units to run over. The last number can be:
+-1: run over all files in the dataset
+0 - 1: run over this fraction of the dataset
+>= 1: run over this many files.
 """
 
 import sys
 import os
 from cmsRunCondor import cmsRunCondor
-import mc_samples as samples
+from collections import namedtuple
 from time import strftime, sleep
 from subprocess import call
 
+# handy data structure to store some attributes for each dataset
+Dataset = namedtuple("Dataset", "inputDataset unitsPerJob totalUnits")
 
+# EDIT THESE
 config = "my_config_cfg.py"
+
 outputDir = "/hdfs/user/REPLACEME/testing"
 
-datasets = ['QCD_Pt-80to120_Spring15_AVE20BX25', 'QCD_Pt-120to170_Spring15_AVE20BX25']
+samples = {
+    "QCDFlatSpring15BX25PU10to30HCALFix": Dataset(inputDataset='/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/GEN-SIM-RAW',
+                                                  unitsPerJob=20, totalUnits=-1),
+
+    "QCDFlatSpring15BX25FlatNoPUHCALFix": Dataset(inputDataset='/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-NhcalZSHFscaleNoPUAsympt25ns_MCRUN2_74_V9-v1/GEN-SIM-RAW',
+                                                  unitsPerJob=5, totalUnits=-1)
+}
+
+
+def check_dataset_exists(dataset):
+    """Check dataset exists in DAS.
+
+    TODO: raise an Error?
+
+    dataset: str.
+        Name of dataset as it appears in DAS.
+    """
+    cmd = ['das_client.py', '--query', 'summary dataset=%s' % dataset]
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    return 'nfiles' in output
+
 
 if __name__ == "__main__":
-    # Run through datasets once to check all fine
-    for dset in datasets:
-        if not dset in samples.samples.keys():
-            raise KeyError("Wrong dataset key name:", dset)
-        if not samples.check_dataset(samples.samples[dset].inputDataset):
-            raise RuntimeError("Dataset cannot be found in DAS: %s" % samples.samples[dset].inputDataset)
 
     status_names = []
 
-    for dset in datasets:
+    for dset, dset_opts in samples.iteritems():
 
-        dset_opts = samples.samples[dset]
+        if not check_dataset_exists(dset_opts.inputDataset):
+            raise RuntimeError("Dataset cannot be found in DAS: %s" % dset_opts.inputDataset)
+
         print "*"*80
         print "Dataset key:", dset
 
         # Make the condor submit script for this dataset
-        scriptName = '%s_%s_%s.condor' % (os.path.basename(config).replace(".py", ""), dset, strftime("%H%M%S"))
+        scriptName = '%s_%s_%s.condor' % (os.path.basename(config).replace(".py", ""),
+                                          dset,
+                                          strftime("%H%M%S"))
         print "Script Name:", scriptName
         job_dict = cmsRunCondor(['--config', config,
                                  '--outputDir', outputDir+"/"+dset,
@@ -47,7 +75,7 @@ if __name__ == "__main__":
                                  '--totalFiles', str(dset_opts.totalUnits),
                                  '--outputScript', scriptName,
                                  '--dry',
-                                 '--dag', # important!
+                                 '--dag',  # important!
                                  # '--verbose'
                                  ])
 
@@ -69,7 +97,7 @@ if __name__ == "__main__":
         print "Check DAG status:"
         print "./DAGstatus.py", dag_name
 
-        if dset != datasets[-1]:
+        if dset != samples.keys()[-1]:
             print "Sleeping for 60s to avoid hammering the queue..."
             sleep(60)
 
