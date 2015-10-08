@@ -19,6 +19,7 @@ import re
 import sys
 import json
 import math
+import shutil
 import logging
 import tarfile
 import argparse
@@ -220,6 +221,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.outputDir.startswith('/hdfs'):
         cmd = "hadoop fs -copyFromLocal -f %s %s" % (sandbox_file, args.outputDir.replace("/hdfs", ""))
         subprocess.call(cmd.split())
+    else:
+        shutil.copy(sandbox_file, args.outputDir)
 
     # check tar filesize - if it's too big, we won't want to transport it
     # tar_size = os.path.getsize(sandbox_file) / (1024 * 1024)  # in MB
