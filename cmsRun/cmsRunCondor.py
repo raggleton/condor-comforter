@@ -193,7 +193,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Make sandbox of user's libs/c++/py files
     ###########################################################################
     sandbox_file = "sandbox.tgz"
-    sandbox_dirs = ['biglib', 'lib', 'module'] #, 'python']
+    sandbox_dirs = ['biglib', 'lib', 'module' , 'python']
     tar = tarfile.open(sandbox_file, mode="w:gz", dereference=True)
     cmssw_base = os.environ['CMSSW_BASE']
     for directory in sandbox_dirs:
