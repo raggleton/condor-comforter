@@ -83,18 +83,24 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Do some preliminary checking
     ###########################################################################
+    if not args.config:
+        raise RuntimeError('You must specify a CMSSW config file')
+
     if not os.path.isfile(args.config):
         err_msg = "Cannot find config file %s" % args.config
         log.error(err_msg)
         raise IOError(err_msg)
 
     # for now, restrict output dir to /hdfs
+    if not args.outputDir:
+        raise RuntimeError('You must specify an output directory')
+
     if not args.outputDir.startswith('/hdfs'):
         log.error('Output directory not on /hdfs')
         raise RuntimeError('Output directory not on /hdfs')
 
     if not os.path.exists(args.outputDir):
-        print "Output directory doesn't exists, trying to make it:", args.outputDir
+        print "Output directory doesn't exists, making it:", args.outputDir
         try:
             os.makedirs(args.outputDir)
         except OSError as e:
@@ -112,6 +118,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
     ###########################################################################
+    if not args.dataset:
+        raise RuntimeError('You must specify a dataset')
+
+    # TODO: use das_client API
     cmds = ['das_client.py',
             '--query',
             'summary dataset=%s' % args.dataset,
