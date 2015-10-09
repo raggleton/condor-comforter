@@ -19,8 +19,10 @@ Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one datas
 Brief example:
 
 ```
-./cmsRunCondor.py --config pset_tutorial_analysis.py --outputDir /hdfs/user/$LOGNAME/test --dataset /QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-AsymptFlat0to50bx25Reco_MCRUN2_74_V9-v3/GEN-SIM-RECO --totalFiles 2 --filesPerJob 1
+./cmsRunCondor.py --config pset_tutorial_analysis.py --outputDir /hdfs/user/$LOGNAME/test --dataset /QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-AsymptFlat0to50bx25Reco_MCRUN2_74_V9-v3/GEN-SIM-RECO --totalFiles 10 --filesPerJob 5 --dag
 ```
+
+You can then monitor job progress with `DAGstatus.py`.
 
 ##exampleDAG
 
