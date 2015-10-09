@@ -193,7 +193,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Make sandbox of user's libs/c++/py files
     ###########################################################################
     sandbox_file = "sandbox.tgz"
-    sandbox_dirs = ['biglib', 'lib', 'module' , 'python']
+    sandbox_dirs = ['biglib', 'lib', 'module', 'python']
     tar = tarfile.open(sandbox_file, mode="w:gz", dereference=True)
     cmssw_base = os.environ['CMSSW_BASE']
     for directory in sandbox_dirs:
@@ -223,8 +223,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # copy to /hdfs or /storage to avoid transfer/copying issues
     sandbox_location = os.path.join(args.outputDir, sandbox_file)
     if args.outputDir.startswith('/hdfs'):
-        cmd = "hadoop fs -copyFromLocal -f %s %s" % (sandbox_file, args.outputDir.replace("/hdfs", ""))
-        subprocess.call(cmd.split())
+        subprocess.call(['hadoop', 'fs', '-copyFromLocal', '-f',
+                         sandbox_file, args.outputDir.replace("/hdfs", "")])
     else:
         shutil.copy(sandbox_file, args.outputDir)
 
@@ -242,7 +242,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Figure out correct number of jobs
     total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
     log.info("Will be submitting %d jobs, running over %d files",
-              total_num_jobs, args.totalFiles)
+             total_num_jobs, args.totalFiles)
 
     script_dir = os.path.dirname(__file__)
     with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
