@@ -7,18 +7,18 @@ Bit rudimentary. See options with:
 
 cmsRunCondor.py --help
 
-Note that it automatically sets the correct input files, providing you give it
-a dataset and specify filesPerJob, and totalFiles.
+Note that it automatically sets the correct input files, providing you give it a
+dataset and specify filesPerJob, and totalFiles.
 
 Robin Aggleton 2015, in a rush
 """
 
 
 import os
+import re
 import sys
 import json
 import math
-import shutil
 import logging
 import tarfile
 import argparse
@@ -50,8 +50,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         type=int, default=5)
     parser.add_argument("--totalFiles",
                         help="Total number of files to run over. "
-                        "Default is ALL (-1). Also acceptable is a fraction of"
-                        " the whole dataset (0-1), or an integer number of files.",
+                        "Default is ALL (-1). Also acceptable is a fraction of "
+                        "the whole dataset (0-1), or an integer number of files.",
                         type=float, default=-1)
     parser.add_argument("--outputScript",
                         help="Optional: name of condor submission script. "
@@ -64,19 +64,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         "don't submit to queue.",
                         action='store_true')
     parser.add_argument("--dag",
-                        help="If you want to run as part of a condor DAG. "
-                        "This will queue only 1 job, and the job number is "
-                        "instead specified by the variable $(index), which "
-                        "should be specified in the DAG script.",
+                        help="If you want to run as a condor DAG. ",
                         action='store_true')
     parser.add_argument('--log',
                         help="Location to store job stdout/err/log files. "
-                        "Default is $PWD/jobs.",
-                        default='jobs')
+                        "Default is $PWD/logs.",
+                        default='logs')
     args = parser.parse_args(args=in_args)
-
-    if args.dag:
-        args.dry = True
 
     if args.verbose:
         log.setLevel(logging.DEBUG)
@@ -148,24 +142,22 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.totalFiles < 0:
         args.totalFiles = num_dataset_files
     elif args.totalFiles < 1:
-        args.totalFiles = math.ceil(num_dataset_files * args.totalFiles)
+        args.totalFiles = math.ceil(args.totalFiles * num_dataset_files)
     elif args.totalFiles > num_dataset_files:
         log.warning("You specified more files than exist. Using all %d files.",
                     num_dataset_files)
-        args.totalFiles = num_dataset_files
 
-    log.debug('TotalFiles %f' % args.totalFiles)
+    # Figure out correct number of jobs
+    total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
 
     ###########################################################################
     # Make a list of input files for each job to avoid doing it on worker node
     ###########################################################################
-    # TODO: use das_client API
     cmds = ['das_client.py',
             '--query',
             'file dataset=%s' % args.dataset,
             '--limit=%d' % args.totalFiles]
     output_files = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-    # TODO add in check incase das_client failed fwr
 
     list_of_files = ['"{0}"'.format(line) for line in output_files.splitlines()
                      if line.lower().startswith("/store")]
@@ -180,7 +172,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         args = [iter(iterable)] * n
         return izip_longest(fillvalue=fillvalue, *args)
 
-    input_file_list = "fileList%s.py" % args.dataset.replace("/", "_").replace("-", "_")
+    dset_uscore = args.dataset[1:]
+    dset_uscore = dset_uscore.replace("/", "_").replace("-", "_")
+    input_file_list = "fileList_%s.py" % dset_uscore
     with open(input_file_list, "w") as file_list:
         file_list.write("fileNames = {")
         for n, chunk in enumerate(grouper(list_of_files, args.filesPerJob)):
@@ -226,40 +220,32 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         subprocess.call(['hadoop', 'fs', '-copyFromLocal', '-f',
                          sandbox_file, args.outputDir.replace("/hdfs", "")])
     else:
-        shutil.copy(sandbox_file, args.outputDir)
-
-    # check tar filesize - if it's too big, we won't want to transport it
-    # tar_size = os.path.getsize(sandbox_file) / (1024 * 1024)  # in MB
-    # if tar_size > 100:
-    #     log.warning('%s is %d MB. This can cause issues if submitting many jobs.',
-    #                 sandbox_file, tar_size)
-    #     log.warning('Auto-submit has been disabled so you can check it')
-    #     args.dry = True
+        raise Exception("Not a valid output dir for sandbox - not /hdfs")
 
     ###########################################################################
     # Make a condor submission script
     ###########################################################################
-    # Figure out correct number of jobs
-    total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
-    log.info("Will be submitting %d jobs, running over %d files",
-             total_num_jobs, args.totalFiles)
+    log.debug("Will be submitting %d jobs, running over %d files",
+              total_num_jobs, args.totalFiles)
 
     script_dir = os.path.dirname(__file__)
     with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
         job_template = template.read()
 
     config_filename = os.path.basename(args.config)
+
+    time = strftime("%H%M%S")
+    date = strftime("%d_%b_%y")
     if not args.outputScript:
         args.outputScript = '%s_%s.condor' % (config_filename.replace(".py", ""),
-                                              strftime("%H%M%S"))
+                                              time)
 
-    job = job_template.replace("SEDINITIAL", "")  # don't use initialdir atm
-
-    # Setup directory for log files
-    log_dir = "logs/%s/%s" % (strftime("%d_%b_%y"), args.dataset.split("/")[1])
+    job = job_template.replace("SEDINITIAL", "")  # don't use initialdir for now
+    log_dir = "%s/%s/%s" % (args.log, date, dset_uscore)
     log_str = "%s/%s" % (log_dir, args.outputScript.replace(".condor", ""))
-    if not os.path.exists("%s" % log_dir):
-        os.makedirs("%s" % log_dir)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log.info('Logs for each job will be written to %s', log_dir)
     job = job.replace("SEDLOG", log_str)
 
     # Construct args to pass to cmsRun_worker.sh on the worker node
@@ -280,10 +266,33 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     log.info('New condor submission script written to %s', args.outputScript)
 
     ###########################################################################
+    # Setup DAG file if needed
+    ###########################################################################
+    if args.dag:
+        dag_name = "jobs_%s_%s_%s.dag" % (dset_uscore, date, time)
+        status_file = dag_name.replace(".dag", ".status")
+        print "DAG Name:", dag_name
+        with open(dag_name, "w") as dag_file:
+            dag_file.write("# DAG for dataset %s\n" % args.dataset)
+            dag_file.write("# Using config file %s\n" % args.config)
+            for job_ind in xrange(total_num_jobs):
+                jobName = "%s_%d" % (dset_uscore, job_ind)
+                dag_file.write('JOB %s %s\n' % (jobName, args.outputScript))
+                dag_file.write('VARS %s index="%d"\n' % (jobName, job_ind))
+                dag_file.write('RETRY %s 3\n' % jobName)
+            dag_file.write("NODE_STATUS_FILE %s 30\n" % status_file)
+
+    ###########################################################################
     # submit to queue unless dry run
     ###########################################################################
     if not args.dry:
-        subprocess.call(['condor_submit', args.outputScript])
+        if not args.dag:
+            subprocess.call(['condor_submit', args.outputScript])
+
+        if args.dag:
+            subprocess.call(['condor_submit_dag', dag_name])
+            print "Check DAG status:"
+            print "DAGstatus.py", status_file
 
     # Return job properties
     return dict(dataset=args.dataset,
@@ -292,7 +301,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 totaNumFiles=args.totalFiles,
                 filesPerJob=args.filesPerJob,
                 fileList=input_file_list,
-                config=args.config
+                config=args.config,
+                condorScript=args.outputScript
                 )
 
 
