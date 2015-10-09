@@ -198,7 +198,7 @@ def print_table(dag_status, node_statuses, status_end, summary):
     # Auto-size each column - find maximum of column header and column contents
     job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses]+[len(k)]) for k, v in job_dict.iteritems()]
     # make formatter string to be used for each row, auto calculates number of columns
-    job_format = "  |  ".join(["{{:<{}}}"] * len(job_dict.keys())).format(*job_col_widths)
+    job_format = " | ".join(["{{:<{}}}"] * len(job_dict.keys())).format(*job_col_widths)
     job_header = job_format.format(*job_dict.keys())
 
     # For info about summary of all jobs:
