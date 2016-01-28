@@ -1,0 +1,163 @@
+WARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.
+%MSG-w CondDBESSource:  (NoModuleName) 24-Oct-2015 14:11:24 BST pre-events
+[WARNING] You are reading tag "RecoTauTag_againstMuonMVAv1" from V1 account "frontier://FrontierProd/CMS_COND_PAT_000". The concerned Conditions might be out of date.
+%MSG
+24-Oct-2015 14:11:49 BST  Initiating request to open file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/000E6EAA-E44E-E511-8C25-0025905A60AA.root
+%MSG-w XrdAdaptor:  file_open 24-Oct-2015 14:12:26 BST pre-events
+Data is served from cern.ch instead of original site T2_US_Nebraska
+%MSG
+24-Oct-2015 14:12:28 BST  Successfully opened file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/000E6EAA-E44E-E511-8C25-0025905A60AA.root
+Begin processing the 1st record. Run 1, Event 918145, LumiSection 4783 at 24-Oct-2015 14:12:49.589 BST
+Begin processing the 201st record. Run 1, Event 1949385, LumiSection 10154 at 24-Oct-2015 14:14:34.928 BST
+Begin processing the 401st record. Run 1, Event 1903313, LumiSection 9914 at 24-Oct-2015 14:16:19.185 BST
+Begin processing the 601st record. Run 1, Event 5451097, LumiSection 28392 at 24-Oct-2015 14:18:04.441 BST
+Begin processing the 801st record. Run 1, Event 5451873, LumiSection 28396 at 24-Oct-2015 14:19:50.824 BST
+Begin processing the 1001st record. Run 1, Event 6723305, LumiSection 35018 at 24-Oct-2015 14:21:38.671 BST
+Begin processing the 1201st record. Run 1, Event 7486705, LumiSection 38994 at 24-Oct-2015 14:23:22.691 BST
+Begin processing the 1401st record. Run 1, Event 7621113, LumiSection 39694 at 24-Oct-2015 14:25:08.700 BST
+Begin processing the 1601st record. Run 1, Event 7993409, LumiSection 41633 at 24-Oct-2015 14:27:03.199 BST
+24-Oct-2015 14:28:14 BST  Closed file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/000E6EAA-E44E-E511-8C25-0025905A60AA.root
+24-Oct-2015 14:28:14 BST  Initiating request to open file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+%MSG-w XrdAdaptor:  file_open 24-Oct-2015 14:28:20 BST PostProcessEvent
+Data is served from cern.ch instead of original site T2_US_Nebraska
+%MSG
+24-Oct-2015 14:28:20 BST  Successfully opened file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+Begin processing the 1801st record. Run 1, Event 6377545, LumiSection 33217 at 24-Oct-2015 14:29:03.834 BST
+Begin processing the 2001st record. Run 1, Event 7877073, LumiSection 41027 at 24-Oct-2015 14:30:48.721 BST
+Begin processing the 2201st record. Run 1, Event 7879193, LumiSection 41038 at 24-Oct-2015 14:32:32.122 BST
+Begin processing the 2401st record. Run 1, Event 7885921, LumiSection 41073 at 24-Oct-2015 14:34:14.408 BST
+Begin processing the 2601st record. Run 1, Event 6454569, LumiSection 33618 at 24-Oct-2015 14:35:58.317 BST
+Begin processing the 2801st record. Run 1, Event 6457649, LumiSection 33634 at 24-Oct-2015 14:37:41.462 BST
+Begin processing the 3001st record. Run 1, Event 6654457, LumiSection 34659 at 24-Oct-2015 14:39:25.102 BST
+Begin processing the 3201st record. Run 1, Event 6658305, LumiSection 34679 at 24-Oct-2015 14:41:08.309 BST
+Begin processing the 3401st record. Run 1, Event 6479369, LumiSection 33747 at 24-Oct-2015 14:42:49.767 BST
+Begin processing the 3601st record. Run 1, Event 6592273, LumiSection 34335 at 24-Oct-2015 14:44:31.689 BST
+Begin processing the 3801st record. Run 1, Event 6761625, LumiSection 35217 at 24-Oct-2015 14:46:21.070 BST
+Begin processing the 4001st record. Run 1, Event 7062113, LumiSection 36782 at 24-Oct-2015 14:48:12.383 BST
+24-Oct-2015 14:48:30 BST  Closed file root://xrootd.unl.edu//store/mc/RunIISpring15DR74/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RAW/NhcalZSHFscaleFlat10to30Asympt25ns_MCRUN2_74_V9-v1/00000/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+
+TrigReport ---------- Event  Summary ------------
+TrigReport Events total = 4032 passed = 4032 failed = 0
+
+TrigReport ---------- Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+TrigReport     1    0       4032       4032          0          0 p
+
+TrigReport -------End-Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+
+TrigReport ---------- Modules in Path: p ------------
+TrigReport  Trig Bit#    Visited     Passed     Failed      Error Name
+TrigReport     1    0       4032       4032          0          0 ecalDigis
+TrigReport     1    1       4032       4032          0          0 hcalDigis
+TrigReport     1    2       4032       4032          0          0 caloStage2Layer1Digis
+TrigReport     1    3       4032       4032          0          0 caloStage2Digis
+TrigReport     1    4       4032       4032          0          0 stage2JetToL1Jet
+TrigReport     1    5       4032       4032          0          0 l1UpgradeTreeProducer
+TrigReport     1    6       4032       4032          0          0 genJetToL1JetAk4
+TrigReport     1    7       4032       4032          0          0 l1ExtraTreeProducerGenAk4
+TrigReport     1    8       4032       4032          0          0 puInfo
+
+TrigReport ---------- Module Summary ------------
+TrigReport    Visited   Executed     Passed     Failed      Error Name
+TrigReport       4032       4032       4032          0          0 ecalDigis
+TrigReport       4032       4032       4032          0          0 hcalDigis
+TrigReport       4032       4032       4032          0          0 caloStage2Layer1Digis
+TrigReport       4032       4032       4032          0          0 caloStage2Digis
+TrigReport       4032       4032       4032          0          0 stage2JetToL1Jet
+TrigReport       4032       4032       4032          0          0 l1UpgradeTreeProducer
+TrigReport       4032       4032       4032          0          0 genJetToL1JetAk4
+TrigReport       4032       4032       4032          0          0 l1ExtraTreeProducerGenAk4
+TrigReport       4032       4032       4032          0          0 puInfo
+TrigReport       4032       4032       4032          0          0 TriggerResults
+
+TimeReport ---------- Event  Summary ---[sec]----
+TimeReport       event loop CPU/event = 0.497255
+TimeReport      event loop Real/event = 0.535431
+TimeReport     sum Streams Real/event = 0.522450
+TimeReport efficiency CPU/Real/thread = 0.928701
+
+TimeReport ---------- Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport   0.519014     0.519014  p
+TimeReport  per event     per exec  Name
+
+TimeReport -------End-Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport  per event     per exec  Name
+
+TimeReport ---------- Modules in Path: p ---[Real sec]----
+TimeReport  per event    per visit  Name
+TimeReport   0.003194     0.003194  ecalDigis
+TimeReport   0.002973     0.002973  hcalDigis
+TimeReport   0.003182     0.003182  caloStage2Layer1Digis
+TimeReport   0.475001     0.475001  caloStage2Digis
+TimeReport   0.000037     0.000037  stage2JetToL1Jet
+TimeReport   0.000117     0.000117  l1UpgradeTreeProducer
+TimeReport   0.000030     0.000030  genJetToL1JetAk4
+TimeReport   0.000250     0.000250  l1ExtraTreeProducerGenAk4
+TimeReport   0.000016     0.000016  puInfo
+TimeReport  per event    per visit  Name
+
+TimeReport ---------- Module Summary ---[Real sec]----
+TimeReport  per event     per exec    per visit  Name
+TimeReport   0.000036     0.000036     0.000036  TriggerResults
+TimeReport   0.003194     0.003194     0.003194  ecalDigis
+TimeReport   0.002973     0.002973     0.002973  hcalDigis
+TimeReport   0.003182     0.003182     0.003182  caloStage2Layer1Digis
+TimeReport   0.475001     0.475001     0.475001  caloStage2Digis
+TimeReport   0.000037     0.000037     0.000037  stage2JetToL1Jet
+TimeReport   0.000117     0.000117     0.000117  l1UpgradeTreeProducer
+TimeReport   0.000030     0.000030     0.000030  genJetToL1JetAk4
+TimeReport   0.000250     0.000250     0.000250  l1ExtraTreeProducerGenAk4
+TimeReport   0.000016     0.000016     0.000016  puInfo
+TimeReport  per event     per exec    per visit  Name
+
+T---Report end!
+
+
+=============================================
+
+MessageLogger Summary
+
+ type     category        sev    module        subroutine        count    total
+ ---- -------------------- -- ---------------- ----------------  -----    -----
+    1 CondDBESSource       -w (NoModuleName)                         1        1
+    2 XrdAdaptor           -w file_open                              2        2
+    3 fileAction           -s file_close                             2        2
+    4 fileAction           -s file_open                              4        4
+
+ type    category    Examples: run/evt        run/evt          run/evt
+ ---- -------------------- ---------------- ---------------- ----------------
+    1 CondDBESSource       pre-events                        
+    2 XrdAdaptor           pre-events       PostProcessEvent 
+    3 fileAction           PostProcessEvent PostEndRun       
+    4 fileAction           pre-events       pre-events       PostProcessEvent
+
+Severity    # Occurrences   Total Occurrences
+--------    -------------   -----------------
+Warning                 3                   3
+System                  6                   6
+	Command being timed: "cmsRun wrapper.py"
+	User time (seconds): 2007.37
+	System time (seconds): 20.59
+	Percent of CPU this job got: 89%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 37:41.42
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1427776
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 3838
+	Minor (reclaiming a frame) page faults: 11035932
+	Voluntary context switches: 317806
+	Involuntary context switches: 9461
+	Swaps: 0
+	File system inputs: 1013960
+	File system outputs: 33512
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
