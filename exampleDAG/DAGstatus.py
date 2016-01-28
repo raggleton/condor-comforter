@@ -21,7 +21,10 @@ log = logging.getLogger(__name__)
 
 
 def strip_doublequotes(line):
-    return re.search(r'\"(.*)\"', line).group(1)
+    if '"' in line:
+        return re.search(r'\"(.*)\"', line).group(1)
+    else:
+        return line
 
 
 class bcolors:
@@ -82,7 +85,7 @@ class DagStatus(ClassAd):
         self.nodes_failed = int(nodes_failed)
         self.job_procs_held = int(job_procs_held)
         self.job_procs_idle = int(job_procs_idle)
-        self.nodes_done_percent = "{:.1f}".format(100. * self.nodes_done / self.nodes_total)
+        self.nodes_done_percent = "{0:.1f}".format(100. * self.nodes_done / self.nodes_total)
         self._job_procs_running = 0
         # self.job_procs_running = 0
         self.node_statuses = node_statuses if node_statuses else []
@@ -95,7 +98,7 @@ class DagStatus(ClassAd):
 
     @property
     def nodes_running_percent(self):
-        return "{:.1f}".format(100. * self.job_procs_running / self.nodes_total)
+        return "{0:.1f}".format(100. * self.job_procs_running / self.nodes_total)
 
 
 class NodeStatus(ClassAd):
@@ -177,9 +180,9 @@ def process(status_filename, summary):
                 store_contents = False
                 continue
             elif store_contents:
-                line = line.replace("\n", "").replace(";", "").strip()
+                line = line.replace("\n", "").strip()
                 parts = line.split(" = ")
-                contents[parts[0]] = parts[1]
+                contents[parts[0]] = parts[1].split(';')[0].replace(';', '')
     dag_status.node_statuses = node_statuses
     print_table(dag_status, node_statuses, status_end, summary)
 
@@ -198,7 +201,8 @@ def print_table(dag_status, node_statuses, status_end, summary):
     # Auto-size each column - find maximum of column header and column contents
     job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses]+[len(k)]) for k, v in job_dict.iteritems()]
     # make formatter string to be used for each row, auto calculates number of columns
-    job_format = " | ".join(["{{:<{}}}"] * len(job_dict.keys())).format(*job_col_widths)
+    job_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(job_dict.keys())), job_col_widths)]
+    job_format = " | ".join(job_format_parts)
     job_header = job_format.format(*job_dict.keys())
 
     # For info about summary of all jobs:
@@ -213,7 +217,8 @@ def print_table(dag_status, node_statuses, status_end, summary):
     summary_dict["Done"] = "nodes_done"
     summary_dict["Done %"] = "nodes_done_percent"
     summary_col_widths = [max(len(str(getattr(dag_status, v))), len(k)) for k, v in summary_dict.iteritems()]
-    summary_format = "  |  ".join(["{{:<{}}}"] * len(summary_dict.keys())).format(*summary_col_widths)
+    summary_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(summary_dict.keys())), summary_col_widths)]
+    summary_format = "  |  ".join(summary_format_parts)
     summary_header = summary_format.format(*summary_dict.keys())
 
     # Now figure out how many char columns to occupy for the *** and ---
