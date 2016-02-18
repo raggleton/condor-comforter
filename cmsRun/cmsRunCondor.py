@@ -292,7 +292,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if args.dag:
             subprocess.call(['condor_submit_dag', dag_name])
             print "Check DAG status:"
-            print "DAGstatus.py", status_file
+            print "./DAGstatus.py", status_file
 
     # Return job properties
     return dict(dataset=args.dataset,
