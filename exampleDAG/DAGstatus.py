@@ -2,53 +2,68 @@
 """
 Code to interpret a DAGman status output, and present it in a more user-friendly manner.
 
+First run `source setup.sh` to add to PATH.
+Then run by doing:
+
+```
+DAGstatus.py [status file [... status file]]
+```
+
 TODO:
 - maybe use namedtuples instead of full-blown classes?
 """
 
 
 import argparse
-import sys
 import logging
-from pprint import pprint
-import re
 import os
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+def strip_comments(line):
+    return line.replace("/*", "").replace("*/", "").strip()
+
+
 def strip_doublequotes(line):
-    if '"' in line:
-        return re.search(r'\"(.*)\"', line).group(1)
-    else:
-        return line
+    return line.replace('"', '')
 
 
-class bcolors:
-    """For terminal coloured output"""
+class TColors:
+    """Common codes for terminal coloured output.
+
+    Use TColors.ENDC to stop the colour.
+
+    e.g.:
+    >>> print TColors.GREEN + "It's not easy being green" + TColors.ENDC
+    """
     HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
     @staticmethod
     def color(state):
-        """Return color code based on state"""
+        """Return color code based on state string."""
         if state.startswith("STATUS_ERROR"):
-            return bcolors.FAIL
+            return TColors.RED
         elif state.startswith("STATUS_SUBMITTED"):
-            return bcolors.OKBLUE
+            return TColors.BLUE
         elif state.startswith("STATUS_DONE"):
-            return bcolors.OKGREEN
+            return TColors.GREEN
         else:
-            return bcolors.ENDC
+            return TColors.ENDC
+
+
+# To hold info about a given line
+Line = namedtuple('Line', 'key value comment')
 
 
 class ClassAd(object):
@@ -73,6 +88,7 @@ class DagStatus(ClassAd):
                  job_procs_held,
                  job_procs_idle,
                  node_statuses=None):
+        super(ClassAd, self).__init__()
         self.timestamp = timestamp
         self.dag_status = strip_doublequotes(dag_status)
         self.nodes_total = int(nodes_total)
@@ -93,8 +109,8 @@ class DagStatus(ClassAd):
     @property
     def job_procs_running(self):
         return len([n for n in self.node_statuses
-                    if n.node_status == "STATUS_SUBMITTED"
-                    and n.status_details == "not_idle"])
+                    if n.node_status == "STATUS_SUBMITTED" and
+                    n.status_details == "not_idle"])
 
     @property
     def nodes_running_percent(self):
@@ -110,6 +126,7 @@ class NodeStatus(ClassAd):
                  retry_count,
                  job_procs_queued,
                  job_procs_held):
+        super(NodeStatus, self).__init__()
         self.node = strip_doublequotes(node)
         self.node_status = strip_doublequotes(node_status)
         self.status_details = status_details.replace('"', '')
@@ -119,18 +136,35 @@ class NodeStatus(ClassAd):
 
 
 class StatusEnd(ClassAd):
-    """Class to describe state of resporting."""
+    """Class to describe state of reporting."""
     def __init__(self,
                  end_time,
                  next_update):
+        super(StatusEnd, self).__init__()
         self.end_time = strip_doublequotes(end_time)
         self.next_update = strip_doublequotes(next_update)
 
 
 def process(status_filename, summary):
-    """Main function to process the status file"""
+    """Main function to process the status file
 
-    print status_filename, ":"
+    Parameters
+    ----------
+    status_filename : str
+        Name of status file to process.
+
+    summary : bool
+        If True, only prints out summary of DAG. Otherwise prints out info about
+        each job in DAG.
+
+    Raises
+    ------
+    KeyError
+        If processing encounters block with unknown type
+        (i.e. not DagStatus, NodeStatus or StatusEnd).
+    """
+
+    print TColors.YELLOW + status_filename + " :" + TColors.ENDC
 
     dag_status = None
     node_statuses = []
@@ -146,32 +180,33 @@ def process(status_filename, summary):
             elif line.startswith("]"):
                 log.debug(contents)
                 # do something with contents here, depending on Type key
-                if contents['Type'] == '"DagStatus"':
-                    dag_status = DagStatus(timestamp=contents['Timestamp'],
-                                           dag_status=contents['DagStatus'],
-                                           nodes_total=contents['NodesTotal'],
-                                           nodes_done=contents['NodesDone'],
-                                           nodes_pre=contents['NodesPre'],
-                                           nodes_queued=contents['NodesQueued'],
-                                           nodes_post=contents['NodesPost'],
-                                           nodes_ready=contents['NodesReady'],
-                                           nodes_unready=contents['NodesUnready'],
-                                           nodes_failed=contents['NodesFailed'],
-                                           job_procs_held=contents['JobProcsHeld'],
-                                           job_procs_idle=contents['JobProcsIdle'])
-                elif contents['Type'] == '"NodeStatus"':
-                    node = NodeStatus(node=contents['Node'],
-                                      node_status=contents['NodeStatus'],
-                                      status_details=contents['StatusDetails'],
-                                      retry_count=contents['RetryCount'],
-                                      job_procs_queued=contents['JobProcsQueued'],
-                                      job_procs_held=contents['JobProcsHeld'])
+                if contents['Type'].value == 'DagStatus':
+                    dag_status = DagStatus(timestamp=contents['Timestamp'].comment,
+                                           dag_status=contents['DagStatus'].comment,
+                                           nodes_total=contents['NodesTotal'].value,
+                                           nodes_done=contents['NodesDone'].value,
+                                           nodes_pre=contents['NodesPre'].value,
+                                           nodes_queued=contents['NodesQueued'].value,
+                                           nodes_post=contents['NodesPost'].value,
+                                           nodes_ready=contents['NodesReady'].value,
+                                           nodes_unready=contents['NodesUnready'].value,
+                                           nodes_failed=contents['NodesFailed'].value,
+                                           job_procs_held=contents['JobProcsHeld'].value,
+                                           job_procs_idle=contents['JobProcsIdle'].value)
+                elif contents['Type'].value == 'NodeStatus':
+                    node = NodeStatus(node=contents['Node'].value,
+                                      node_status=contents['NodeStatus'].comment,
+                                      status_details=contents['StatusDetails'].value,
+                                      retry_count=contents['RetryCount'].value,
+                                      job_procs_queued=contents['JobProcsQueued'].value,
+                                      job_procs_held=contents['JobProcsHeld'].value)
                     node_statuses.append(node)
-                elif contents['Type'] == '"StatusEnd"':
-                    status_end = StatusEnd(end_time=contents['EndTime'],
-                                           next_update=contents['NextUpdate'])
+                elif contents['Type'].value == 'StatusEnd':
+                    status_end = StatusEnd(end_time=contents['EndTime'].comment,
+                                           next_update=contents['NextUpdate'].comment)
                 else:
-                    print contents['Type']
+                    log.debug(contents)
+                    log.debug(contents['Type'])
                     raise KeyError("Unknown block Type")
                 contents = {}
                 store_contents = False
@@ -180,15 +215,51 @@ def process(status_filename, summary):
                 store_contents = False
                 continue
             elif store_contents:
-                line = line.replace("\n", "").strip()
-                parts = line.split(" = ")
-                contents[parts[0]] = parts[1].split(';')[0].replace(';', '')
+                # Actually handle the line
+                line_parsed = interpret_line(line)
+                contents[line_parsed.key] = line_parsed
     dag_status.node_statuses = node_statuses
     print_table(dag_status, node_statuses, status_end, summary)
 
 
+def interpret_line(line):
+    """Interpret raw string corresponding to a line, then return as Line obj.
+
+    Parameters
+    ----------
+    line : str
+        Line to be interpreted.
+    """
+    raw = line.replace('\n', '').strip()
+    parts = [x.strip() for x in raw.split('=')]
+    other = [x.strip() for x in parts[1].split(";")]
+    value = strip_doublequotes(other[0])
+    if len(other) == 2:
+        comment = strip_doublequotes(strip_comments(other[1]))
+    else:
+        comment = ''
+    return Line(key=parts[0], value=value, comment=comment)
+
+
 def print_table(dag_status, node_statuses, status_end, summary):
-    """Print a pretty-ish table with important info"""
+    """Print a pretty-ish table with important info
+
+    Parameters
+    ----------
+    dag_status : DagStatus
+        Object holding info about overall status of DAG.
+
+    node_statuses : list[NodeStatus]
+        List of objects holding info about each job.
+
+    status_end : StatusEnd
+        Object holding info about reporting.
+
+    summary : bool
+        If True, only prints out summary of DAG. Otherwise prints out info about
+        each job in DAG.
+
+    """
     # Here we auto-create the formatting strings for each row,
     # and auto-size each column based on max size of contents
 
@@ -199,15 +270,17 @@ def print_table(dag_status, node_statuses, status_end, summary):
     job_dict["Retries"] = "retry_count"
     job_dict["Detail"] = "status_details"
     # Auto-size each column - find maximum of column header and column contents
-    job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses]+[len(k)]) for k, v in job_dict.iteritems()]
+    job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses] + [len(k)])
+                      for k, v in job_dict.iteritems()]
     # make formatter string to be used for each row, auto calculates number of columns
+    # note that the %d are required for python 2.6, which doesn't allow just {}
     job_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(job_dict.keys())), job_col_widths)]
     job_format = " | ".join(job_format_parts)
     job_header = job_format.format(*job_dict.keys())
 
     # For info about summary of all jobs:
     summary_dict = OrderedDict()
-    summary_dict["DAG status"] = "dag_status"
+    summary_dict["DAG Status"] = "dag_status"
     summary_dict["Total"] = "nodes_total"
     summary_dict["Queued"] = "nodes_queued"
     summary_dict["Idle"] = "job_procs_idle"
@@ -216,7 +289,8 @@ def print_table(dag_status, node_statuses, status_end, summary):
     summary_dict["Failed"] = "nodes_failed"
     summary_dict["Done"] = "nodes_done"
     summary_dict["Done %"] = "nodes_done_percent"
-    summary_col_widths = [max(len(str(getattr(dag_status, v))), len(k)) for k, v in summary_dict.iteritems()]
+    summary_col_widths = [max(len(str(getattr(dag_status, v))), len(k))
+                          for k, v in summary_dict.iteritems()]
     summary_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(summary_dict.keys())), summary_col_widths)]
     summary_format = "  |  ".join(summary_format_parts)
     summary_header = summary_format.format(*summary_dict.keys())
@@ -232,37 +306,40 @@ def print_table(dag_status, node_statuses, status_end, summary):
 
     # Now actually print the table
     if not summary:
-        print "*" * columns
+        print "~" * columns
         # Print info for each job.
-        print bcolors.ENDC + job_header
+        print TColors.ENDC + job_header
         print "-" * columns
         for n in node_statuses:
-            print (bcolors.color(n.node_status) +
-                job_format.format(*[n.__dict__[v] for v in job_dict.values()]))
-        print bcolors.ENDC + "-" * columns
+            print (TColors.color(n.node_status) +
+                   job_format.format(*[n.__dict__[v] for v in job_dict.values()]))
+        print TColors.ENDC + "-" * columns
     # print summary of all jobs
-    print "*" * columns
+    print "~" * columns
     print summary_header
     print "-" * columns
     # Make it coloured depending on job status
-    sum_col = bcolors.ENDC
-    # if summary:
-    print (bcolors.color(dag_status.dag_status) +
-        summary_format.format(*[getattr(dag_status, v) for v in summary_dict.values()]))
+    # sum_col = TColors.ENDC
+    print (TColors.color(dag_status.dag_status) +
+           summary_format.format(*[getattr(dag_status, v) for v in summary_dict.values()]))
     if not summary:
-        print bcolors.ENDC + "-" * columns
-        # print time of next update
+        print TColors.ENDC + "-" * columns
         print "Status recorded at:", status_end.end_time
         print "Next update:       ", status_end.next_update
-    print bcolors.ENDC + "*" * columns
+    print TColors.ENDC + "~" * columns
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-v", "--verbose", help="enable debugging mesages", action='store_true')
-    parser.add_argument("-s", "--summary", help="only printout very short summary of all jobs", action='store_true')
-    parser.add_argument("statusFile", help="name(s) of DAG status file(s), separated by spaces", nargs="*")
+    parser.add_argument("-v", "--verbose",
+                        help="enable debugging mesages",
+                        action='store_true')
+    parser.add_argument("-s", "--summary",
+                        help="only printout very short summary of all jobs",
+                        action='store_true')
+    parser.add_argument("statusFile",
+                        help="name(s) of DAG status file(s), separated by spaces",
+                        nargs="*")
     args = parser.parse_args()
     if args.verbose:
         log.setLevel(logging.DEBUG)
