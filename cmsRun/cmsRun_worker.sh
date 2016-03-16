@@ -25,8 +25,8 @@ ind="" # ind is the job number
 arch="" # architecture
 cmssw_version="" # cmssw version
 sandbox="" # sandbox location
-
-while getopts ":s:f:o:i:a:c:S:" opt; do
+doProfile=0  # do profiling - runs with callgrind
+while getopts ":s:f:o:i:a:c:S:p" opt; do
     case $opt in
         \?)
             echo "Invalid option $OPTARG" >&2
@@ -64,6 +64,10 @@ while getopts ":s:f:o:i:a:c:S:" opt; do
             echo "Sandbox location: $OPTARG"
             sandbox=$OPTARG
             ;;
+        p)
+            echo "Profiling"
+            doProfile=1
+            ;;
     esac
 done
 
@@ -91,6 +95,13 @@ cd ..
 cp $sandbox sandbox.tgz
 tar xvzf sandbox.tgz
 
+# Setup new libs to point to local ones
+export LD_LIBRARY_PATH=${worker}/${cmssw_version}/biglib/${SCRAM_ARCH}:${worker}/${cmssw_version}/lib/${SCRAM_ARCH}:${worker}/${cmssw_version}/external/${SCRAM_ARCH}/lib:$LD_LIBRARY_PATH
+echo "========================="
+echo "New LD_LIBRARY_PATH:"
+echo $LD_LIBRARY_PATH
+echo "========================="
+
 ###############################################################################
 # Make a wrapper config
 # This will setup the input files, output file, and number of events
@@ -100,14 +111,18 @@ wrapper="wrapper.py"
 
 echo "import FWCore.ParameterSet.Config as cms" >> $wrapper
 echo "import "${script%.py}" as myscript" >> $wrapper
-echo "import ${filelist%.py} as filelist" >> $wrapper
 echo "process = myscript.process" >> $wrapper
-echo "process.source.fileNames = cms.untracked.vstring(filelist.fileNames[$ind])" >> $wrapper
-echo "process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))" >> $wrapper
+if [ $doProfile == 0 ]; then
+    # if we're profling then don't override the input files
+    echo "import ${filelist%.py} as filelist" >> $wrapper
+    echo "process.source.fileNames = cms.untracked.vstring(filelist.fileNames[$ind])" >> $wrapper
+    echo "process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))" >> $wrapper
+fi
 echo "if hasattr(process, 'TFileService'): process.TFileService.fileName = "\
 "cms.string(process.TFileService.fileName.value().replace('.root', '_${ind}.root'))" >> $wrapper
-echo "process.output.fileName = cms.untracked.string("\
-"process.output.fileName.value().replace('.root', '_${ind}.root'))" >> $wrapper
+echo "for omod in process.outputModules.itervalues():" >> $wrapper
+echo "    omod.fileName = cms.untracked.string(process.output.fileName.value().replace('.root', '_${ind}.root'))" >> $wrapper
+echo ""
 
 echo "==== Wrapper script ====="
 echo ""
@@ -125,13 +140,24 @@ cat $script
 echo ""
 echo "========================="
 
+# Get offline JEC SQL database
+# hadoop fs -copyToLocal /user/ra12451/L1JEC/Summer15_25nsV6_DATA.db Summer15_25nsV6_DATA.db
+
 ###############################################################################
 # Now finally run script!
 # TODO: some automated retry system
 ###############################################################################
-cmsRun $wrapper
-echo "CMS JOB OUTPUT" $?
-
+if [ $doProfile == 1 ]; then
+    echo "Running with callgrind"
+    valgrind --tool=callgrind cmsRun $wrapper
+else
+    /usr/bin/time -v cmsRun $wrapper
+fi
+cmsResult=$?
+echo "CMS JOB OUTPUT" $cmsResult
+if [ "$cmsResult" -ne 0 ]; then
+    exit $cmsResult
+fi
 ls -l
 
 ###############################################################################
@@ -149,3 +175,17 @@ do
         cp $output $outputDir
     fi
 done
+
+# Copy callgrind output
+for f in $(find . -name "callgrind.out.*")
+do
+    output=$(basename $f)
+    echo "Copying $output to $outputDir"
+    if [[ "$outputDir" == /hdfs/* ]]; then
+        hadoop fs -copyFromLocal -f $output ${outputDir///hdfs}/$output
+    elif [[ "$outputDir" == /storage* ]]; then
+        cp $output $outputDir
+    fi
+done
+
+exit $?
