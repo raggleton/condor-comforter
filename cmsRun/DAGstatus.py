@@ -1,16 +1,8 @@
 #!/usr/bin/env python
 """
-Code to interpret a DAGman status output, and present it in a more user-friendly manner.
+Code to present the DAGman status output in a more user-friendly manner.
 
-First run `source setup.sh` to add to PATH.
-Then run by doing:
-
-```
-DAGstatus.py [status file [... status file]]
-```
-
-TODO:
-- maybe use namedtuples instead of full-blown classes?
+Add this directory to your PATH to run DAGstatus.py from anywhere.
 """
 
 
@@ -18,6 +10,8 @@ import argparse
 import logging
 import os
 from collections import OrderedDict, namedtuple
+import json
+import sys
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -33,33 +27,64 @@ def strip_doublequotes(line):
 
 
 class TColors:
-    """Common codes for terminal coloured output.
+    """Handle terminal coloured output.
+    Use TColors.COLORS['ENDC'] to stop the colour.
 
-    Use TColors.ENDC to stop the colour.
+    Also returns colours based on job/DAG status, and for various other parts.
 
     e.g.:
-    >>> print TColors.GREEN + "It's not easy being green" + TColors.ENDC
-    """
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    >>> print TColors.COLORS['GREEN'] + "It's not easy being green" + TColors.COLORS['ENDC']
 
-    @staticmethod
-    def color(state):
-        """Return color code based on state string."""
-        if state.startswith("STATUS_ERROR"):
-            return TColors.RED
-        elif state.startswith("STATUS_SUBMITTED"):
-            return TColors.BLUE
-        elif state.startswith("STATUS_DONE"):
-            return TColors.GREEN
+    or better:
+
+    TColors.printc("It's not easy being green", TColors.COLORS['GREEN'])
+    """
+    fmt_dict = {}
+    with open(os.path.join(os.path.dirname(__file__), 'DAGstatus_config.json')) as js:
+        fmt_dict = json.load(js)
+
+    COLORS = fmt_dict['colors']
+    for k, v in COLORS.iteritems():
+        COLORS[k] = str(v).decode('string_escape')
+    STATUS_COLORS = fmt_dict['statuses']
+    FMT_COLORS = fmt_dict['formatting']
+
+    @classmethod
+    def printc(cls, text, color_code):
+        """Print coloured output, and reset the colour after the output"""
+        print color_code + text + cls.COLORS['ENDC']
+
+    @classmethod
+    def status_color(cls, status):
+        """Return color code based on status string.
+        If no matching status string, returns end-color.
+        """
+        if status in cls.fmt_dict['statuses'].keys():
+            try:
+                return ''.join([cls.COLORS[part.strip()] for part in cls.STATUS_COLORS[status].split("+")])
+            except KeyError:
+                log.exception('Cannot find colour with name %s', cls.fmt_dict['statuses'][status])
         else:
-            return TColors.ENDC
+            return cls.COLORS['ENDC']
+
+    @classmethod
+    def formatting_color(cls, section):
+        """Return color code based on section.
+        If no matching section label, returns end-color.
+        """
+        if section in cls.FMT_COLORS.keys():
+            try:
+                return ''.join([cls.COLORS[part.strip()] for part in cls.FMT_COLORS[section].split("+")])
+            except KeyError:
+                log.exception('Cannot find colour with name %s', cls.FMT_COLORS[section])
+        else:
+            return cls.COLORS['ENDC']
+
+
+def get_terminal_size():
+    """Get width of current terminal, in pixels"""
+    term_rows, term_columns = os.popen('stty size', 'r').read().split()
+    return int(term_rows), int(term_columns)
 
 
 # To hold info about a given line
@@ -145,17 +170,34 @@ class StatusEnd(ClassAd):
         self.next_update = strip_doublequotes(next_update)
 
 
-def process(status_filename, summary):
-    """Main function to process the status file
+def process(status_filename, only_summary):
+    """Main function to process the status file and print it on screen.
 
     Parameters
     ----------
     status_filename : str
         Name of status file to process.
 
-    summary : bool
+    only_summary : bool
         If True, only prints out summary of DAG. Otherwise prints out info about
         each job in DAG.
+    """
+    dag_status, node_statuses, status_end = interpret_status_file(status_filename)
+    print_table(status_filename, dag_status, node_statuses, status_end, only_summary)
+
+
+def interpret_status_file(status_filename):
+    """Interpret the DAG status file, return objects with DAG & node statuses.
+
+    Parameters
+    ----------
+    status_filename : str
+        Filename of status file to interpret.
+
+    Returns
+    -------
+    DagStatus, list[NodeStatus], StatusEnd
+        Objects with info abotu DAG, all nodes, and end info (update times).
 
     Raises
     ------
@@ -163,9 +205,6 @@ def process(status_filename, summary):
         If processing encounters block with unknown type
         (i.e. not DagStatus, NodeStatus or StatusEnd).
     """
-
-    print TColors.YELLOW + status_filename + " :" + TColors.ENDC
-
     dag_status = None
     node_statuses = []
     status_end = None
@@ -181,29 +220,12 @@ def process(status_filename, summary):
                 log.debug(contents)
                 # do something with contents here, depending on Type key
                 if contents['Type'].value == 'DagStatus':
-                    dag_status = DagStatus(timestamp=contents['Timestamp'].comment,
-                                           dag_status=contents['DagStatus'].comment,
-                                           nodes_total=contents['NodesTotal'].value,
-                                           nodes_done=contents['NodesDone'].value,
-                                           nodes_pre=contents['NodesPre'].value,
-                                           nodes_queued=contents['NodesQueued'].value,
-                                           nodes_post=contents['NodesPost'].value,
-                                           nodes_ready=contents['NodesReady'].value,
-                                           nodes_unready=contents['NodesUnready'].value,
-                                           nodes_failed=contents['NodesFailed'].value,
-                                           job_procs_held=contents['JobProcsHeld'].value,
-                                           job_procs_idle=contents['JobProcsIdle'].value)
+                    dag_status = generate_DagStatus(contents)
                 elif contents['Type'].value == 'NodeStatus':
-                    node = NodeStatus(node=contents['Node'].value,
-                                      node_status=contents['NodeStatus'].comment,
-                                      status_details=contents['StatusDetails'].value,
-                                      retry_count=contents['RetryCount'].value,
-                                      job_procs_queued=contents['JobProcsQueued'].value,
-                                      job_procs_held=contents['JobProcsHeld'].value)
+                    node = generate_NodeStatus(contents)
                     node_statuses.append(node)
                 elif contents['Type'].value == 'StatusEnd':
-                    status_end = StatusEnd(end_time=contents['EndTime'].comment,
-                                           next_update=contents['NextUpdate'].comment)
+                    status_end = generate_StatusEnd(contents)
                 else:
                     log.debug(contents)
                     log.debug(contents['Type'])
@@ -219,7 +241,8 @@ def process(status_filename, summary):
                 line_parsed = interpret_line(line)
                 contents[line_parsed.key] = line_parsed
     dag_status.node_statuses = node_statuses
-    print_table(dag_status, node_statuses, status_end, summary)
+
+    return dag_status, node_statuses, status_end
 
 
 def interpret_line(line):
@@ -229,6 +252,11 @@ def interpret_line(line):
     ----------
     line : str
         Line to be interpreted.
+
+    Returns
+    -------
+    Line
+        Line object filled with key, value, and any comments.
     """
     raw = line.replace('\n', '').strip()
     parts = [x.strip() for x in raw.split('=')]
@@ -241,11 +269,63 @@ def interpret_line(line):
     return Line(key=parts[0], value=value, comment=comment)
 
 
-def print_table(dag_status, node_statuses, status_end, summary):
+def generate_DagStatus(contents):
+    """Create, fill, and return a DagStatus object with info in contents dict."""
+    return DagStatus(timestamp=contents['Timestamp'].comment,
+                     dag_status=contents['DagStatus'].comment,
+                     nodes_total=contents['NodesTotal'].value,
+                     nodes_done=contents['NodesDone'].value,
+                     nodes_pre=contents['NodesPre'].value,
+                     nodes_queued=contents['NodesQueued'].value,
+                     nodes_post=contents['NodesPost'].value,
+                     nodes_ready=contents['NodesReady'].value,
+                     nodes_unready=contents['NodesUnready'].value,
+                     nodes_failed=contents['NodesFailed'].value,
+                     job_procs_held=contents['JobProcsHeld'].value,
+                     job_procs_idle=contents['JobProcsIdle'].value)
+
+
+def generate_NodeStatus(contents):
+    """Create, fill, and return a NodeStatus object with info in contents dict."""
+    return NodeStatus(node=contents['Node'].value,
+                      node_status=contents['NodeStatus'].comment,
+                      status_details=contents['StatusDetails'].value,
+                      retry_count=contents['RetryCount'].value,
+                      job_procs_queued=contents['JobProcsQueued'].value,
+                      job_procs_held=contents['JobProcsHeld'].value)
+
+
+def generate_StatusEnd(contents):
+    """Create, fill, and return a StatusEnd object with info in contents dict."""
+    return StatusEnd(end_time=contents['EndTime'].comment,
+                     next_update=contents['NextUpdate'].comment)
+
+
+def create_format_str(parts_dict, separator):
+    """Create a format string out of parts_dict for use with .format()
+
+    Parameters
+    ----------
+    parts_dict : dict[str, dict]
+
+    Returns
+    -------
+    str
+        String for use when formatting rows of table.
+    """
+    format_parts = ["{%d:<%d}" % (i, v["len"]) for i, v in enumerate(parts_dict.itervalues())]
+    format_str = separator.join(format_parts)
+    return format_str
+
+
+def print_table(status_filename, dag_status, node_statuses, status_end, only_summary):
     """Print a pretty-ish table with important info
 
     Parameters
     ----------
+    status_filename : str
+        Filename of status file
+
     dag_status : DagStatus
         Object holding info about overall status of DAG.
 
@@ -255,82 +335,91 @@ def print_table(dag_status, node_statuses, status_end, summary):
     status_end : StatusEnd
         Object holding info about reporting.
 
-    summary : bool
+    only_summary : bool
         If True, only prints out summary of DAG. Otherwise prints out info about
         each job in DAG.
-
     """
     # Here we auto-create the formatting strings for each row,
     # and auto-size each column based on max size of contents
+    separator = " | "
 
     # For info about each node:
-    job_dict = OrderedDict()  # holds column title as key and object attribute name as value
-    job_dict["Node"] = "node"
-    job_dict["Status"] = "node_status"
-    job_dict["Retries"] = "retry_count"
-    job_dict["Detail"] = "status_details"
+    job_dict = OrderedDict()  # holds column title as key and dict of attr, field length, as value
+    job_dict["Node"] = {"attr": "node", "len": 0}
+    job_dict["Status"] = {"attr": "node_status", "len": 0}
+    job_dict["Retries"] = {"attr": "retry_count", "len": 0}
+    job_dict["Detail"] = {"attr": "status_details", "len": 0}
     # Auto-size each column - find maximum of column header and column contents
-    job_col_widths = [max([len(str(getattr(x, v))) for x in node_statuses] + [len(k)])
-                      for k, v in job_dict.iteritems()]
-    # make formatter string to be used for each row, auto calculates number of columns
-    # note that the %d are required for python 2.6, which doesn't allow just {}
-    job_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(job_dict.keys())), job_col_widths)]
-    job_format = " | ".join(job_format_parts)
+    for k, v in job_dict.iteritems():
+        job_dict[k]["len"] = max([len(str(getattr(s, v["attr"]))) for s in node_statuses] + [len(k)])
+
+    job_format = create_format_str(job_dict, separator)
+
+    total_length = (sum([v['len'] for v in job_dict.itervalues()]) +
+                    (len(separator) * (len(job_dict) - 1)))
+
+    # If total width is too large for the terminal, we force it to fit by taking
+    # away space from the node name column, but keeping at least 1 char.
+    term_height, term_width = get_terminal_size()
+    if total_length > term_width:
+        job_dict["Node"]["len"] -= (total_length - term_width + 1)
+        job_dict['Node']['len'] = max(job_dict['Node']['len'], 1)
+    job_format = create_format_str(job_dict, separator)
+
     job_header = job_format.format(*job_dict.keys())
 
     # For info about summary of all jobs:
     summary_dict = OrderedDict()
-    summary_dict["DAG Status"] = "dag_status"
-    summary_dict["Total"] = "nodes_total"
-    summary_dict["Queued"] = "nodes_queued"
-    summary_dict["Idle"] = "job_procs_idle"
-    summary_dict["Running"] = "job_procs_running"
-    summary_dict["Running %"] = "nodes_running_percent"
-    summary_dict["Failed"] = "nodes_failed"
-    summary_dict["Done"] = "nodes_done"
-    summary_dict["Done %"] = "nodes_done_percent"
-    summary_col_widths = [max(len(str(getattr(dag_status, v))), len(k))
-                          for k, v in summary_dict.iteritems()]
-    summary_format_parts = ["{%d:<%d}" % (i, l) for i, l in zip(range(len(summary_dict.keys())), summary_col_widths)]
-    summary_format = "  |  ".join(summary_format_parts)
+    summary_dict["DAG Status"] = {"attr": "dag_status", "len": 0}
+    summary_dict["Total"] = {"attr": "nodes_total", "len": 0}
+    summary_dict["Queued"] = {"attr": "nodes_queued", "len": 0}
+    summary_dict["Idle"] = {"attr": "job_procs_idle", "len": 0}
+    summary_dict["Running"] = {"attr": "job_procs_running", "len": 0}
+    summary_dict["Running %"] = {"attr": "nodes_running_percent", "len": 0}
+    summary_dict["Failed"] = {"attr": "nodes_failed", "len": 0}
+    summary_dict["Done"] = {"attr": "nodes_done", "len": 0}
+    summary_dict["Done %"] = {"attr": "nodes_done_percent", "len": 0}
+    for k, v in summary_dict.iteritems():
+        summary_dict[k]["len"] = max(len(str(getattr(dag_status, v["attr"]))), len(k))
+    summary_format = create_format_str(summary_dict, separator)
     summary_header = summary_format.format(*summary_dict.keys())
 
     # Now figure out how many char columns to occupy for the *** and ---
-    columns = len(summary_header) if summary else max(len(job_header), len(summary_header))
+    columns = len(summary_header) if only_summary else max(len(job_header), len(summary_header))
     columns += 1
-    term_rows, term_columns = os.popen('stty size', 'r').read().split()
-    term_rows = int(term_rows)
-    term_columns = int(term_columns)
-    if columns > term_columns:
-        columns = term_columns
+    if columns > term_width:
+        columns = term_width
 
     # Now actually print the table
-    if not summary:
-        print "~" * columns
+    TColors.printc(status_filename, TColors.formatting_color('FILENAME'))
+
+    if not only_summary:
         # Print info for each job.
-        print TColors.ENDC + job_header
+        print "~" * columns
+        print job_header
         print "-" * columns
         for n in node_statuses:
-            print (TColors.color(n.node_status) +
-                   job_format.format(*[n.__dict__[v] for v in job_dict.values()]))
-        print TColors.ENDC + "-" * columns
+            TColors.printc(job_format.format(*[str(n.__dict__[v["attr"]])[0:v['len']] for v in job_dict.itervalues()]),
+                           TColors.status_color(n.node_status))
+        print "-" * columns
     # print summary of all jobs
     print "~" * columns
     print summary_header
     print "-" * columns
-    # Make it coloured depending on job status
-    # sum_col = TColors.ENDC
-    print (TColors.color(dag_status.dag_status) +
-           summary_format.format(*[getattr(dag_status, v) for v in summary_dict.values()]))
-    if not summary:
-        print TColors.ENDC + "-" * columns
+    TColors.printc(summary_format.format(*[str(getattr(dag_status, v["attr"]))[0:v['len']] for v in summary_dict.itervalues()]),
+                   TColors.status_color(dag_status.dag_status.split()[0]))
+    if not only_summary:
+        # print time of next update
+        print "-" * columns
         print "Status recorded at:", status_end.end_time
-        print "Next update:       ", status_end.next_update
-    print TColors.ENDC + "~" * columns
+        TColors.printc("Next update:        %s" % status_end.next_update,
+                       TColors.formatting_color('NEXT_UPDATE'))
+    print "~" * columns
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-v", "--verbose",
                         help="enable debugging mesages",
                         action='store_true')
@@ -338,10 +427,18 @@ if __name__ == "__main__":
                         help="only printout very short summary of all jobs",
                         action='store_true')
     parser.add_argument("statusFile",
-                        help="name(s) of DAG status file(s), separated by spaces",
+                        help="DAG status file(s), separated by spaces",
                         nargs="*")
     args = parser.parse_args()
+
     if args.verbose:
         log.setLevel(logging.DEBUG)
+
+    if len(args.statusFile) == 0:
+        parser.print_help()
+        exit()
+
     for f in args.statusFile:
         process(f, args.summary)
+
+    sys.exit(0)
