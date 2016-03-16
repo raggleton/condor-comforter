@@ -161,7 +161,6 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.profile:
         # placehold vars
         total_num_jobs = 1
-        dset_uscore = 'profiling'
         input_file_list = None
 
     else:
@@ -323,9 +322,15 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         status_file = dag_name.replace(".dag", ".status")
         log.info("DAG Filename: %s", dag_name)
         with open(dag_name, "w") as dag_file:
-            dag_file.write("# DAG for dataset %s\n" % args.dataset)
             dag_file.write("# Using config file %s\n" % args.config)
-            dset_uscore = args.dataset[1:].replace("/", "_").replace("-", "_")
+
+            if args.filelist:
+                dset_uscore = os.path.splitext(os.path.basename(args.filelist))[0][:20]
+            elif args.profile:
+                dset_uscore = "profiling"
+            else:
+                dset_uscore = args.dataset[1:].replace("/", "_").replace("-", "_")
+
             for job_ind in xrange(total_num_jobs):
                 jobName = "%s_%d" % (dset_uscore, job_ind)
                 dag_file.write('JOB %s %s\n' % (jobName, args.outputScript))
