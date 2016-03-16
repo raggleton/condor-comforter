@@ -84,15 +84,14 @@ echo "... sourcing CMS default environment from CVMFS"
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 echo "... creating CMSSW project area"
 scramv1 project CMSSW ${cmssw_version}
-cd ${cmssw_version}/src
+cd ${cmssw_version}/src  # run everything inside CMSSW_BASE/src
 eval `scramv1 runtime -sh`  # cmsenv
 echo "${cmssw_version} has been set up"
 
 ###############################################################################
 # Extract sandbox of user's libs, headers, and python files
 ###############################################################################
-cd ..
-cp $sandbox sandbox.tgz
+hadoop fs -copyToLocal ${sandbox#/hdfs} sandbox.tgz  # assumes this is on HDFS!
 tar xvzf sandbox.tgz
 
 # Setup new libs to point to local ones
@@ -139,9 +138,6 @@ echo ""
 cat $script
 echo ""
 echo "========================="
-
-# Get offline JEC SQL database
-# hadoop fs -copyToLocal /user/ra12451/L1JEC/Summer15_25nsV6_DATA.db Summer15_25nsV6_DATA.db
 
 ###############################################################################
 # Now finally run script!
