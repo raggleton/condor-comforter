@@ -158,15 +158,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Lookup dataset with das_client to determine number of files/jobs
     # but only if we're not profiling
     ###########################################################################
-    if args.profile:
-        # placehold vars
-        total_num_jobs = 1
-        input_file_list = None
+    # placehold vars
+    total_num_jobs = 1
+    input_file_list = None
 
-    else:
+    if not args.profile:
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
-
         if not args.filelist:
             # TODO: use das_client API
             log.info("Querying DAS for dataset info, please be patient...")
