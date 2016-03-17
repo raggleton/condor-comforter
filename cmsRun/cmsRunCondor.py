@@ -32,6 +32,7 @@ log = logging.getLogger(__name__)
 
 
 def generate_filelist_filename(dataset):
+    """Generate a filelist filename from a dataset name."""
     dset_uscore = dataset[1:]
     dset_uscore = dset_uscore.replace("/", "_").replace("-", "_")
     return "fileList_%s.py" % dset_uscore
@@ -49,6 +50,20 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def create_filelist(list_of_files, files_per_job, filelist_filename):
+    """Write python dict to file with input files for each job.
+    It can then be used in worker script to override the PoolSource.
+    Each job will have files_per_job input files.
+
+    Parameters
+    ----------
+    list_of_files : list[str]
+        List of input files for cmsRun.
+    files_per_job : int
+        Number of files to process per job
+    filelist_filename : str
+        Filename to write python dict to.
+
+    """
     with open(filelist_filename, "w") as file_list:
         file_list.write("fileNames = {")
         for n, chunk in enumerate(grouper(list_of_files, files_per_job)):
@@ -121,6 +136,71 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     else:
         raise Exception("Not a valid output dir for sandbox - not /hdfs")
     return sandbox_location
+
+
+def create_list_of_files_from_das(dataset, num_files):
+    """Create list of num_files filenames for dataset using DAS.
+
+    Parameters
+    ----------
+    dataset : str
+        Name of dataset
+    num_files : int
+        Total number of files to get.
+
+    Returns
+    -------
+    list[str]
+        List of filenames.
+
+    Raises
+    ------
+    RuntimeError
+        If DAS fails to find dataset
+
+    """
+    # TODO: use das_client API
+    log.info("Querying DAS for dataset info, please be patient...")
+    cmds = ['das_client.py',
+            '--query',
+            'summary dataset=%s' % dataset,
+            '--format=json']
+    output_summary = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+    log.debug(output_summary)
+    summary = json.loads(output_summary)
+
+    # check to make sure dataset is valid
+    if summary['status'] == 'fail':
+        log.error('Error querying dataset with das_client:')
+        log.error(summary['reason'])
+        raise RuntimeError('Error querying dataset with das_client')
+
+    # get required number of files
+    # can either have:
+    # < 0 : all files
+    # 0 - 1 : use that fraction of the dataset
+    # >= 1 : use that number of files
+    num_dataset_files = int(summary['data'][0]['summary'][0]['nfiles'])
+    if num_files < 0:
+        num_files = num_dataset_files
+    elif num_files < 1:
+        num_files = math.ceil(num_files * num_dataset_files)
+    elif num_files > num_dataset_files:
+        num_files = num_dataset_files
+        log.warning("You specified more files than exist. Using all %d files.",
+                    num_dataset_files)
+
+    # Make a list of input files for each job to avoid doing it on worker node
+    log.info("Querying DAS for filenames, please be patient...")
+    cmds = ['das_client.py',
+            '--query',
+            'file dataset=%s' % dataset,
+            '--limit=%d' % num_files]
+    output_files = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+
+    list_of_files = ['"{0}"'.format(line) for line in output_files.splitlines()
+                     if line.lower().startswith("/store")]
+    return list_of_files
 
 
 def cmsRunCondor(in_args=sys.argv[1:]):
@@ -231,61 +311,18 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
         if not args.filelist:
-            # TODO: use das_client API
-            log.info("Querying DAS for dataset info, please be patient...")
-            cmds = ['das_client.py',
-                    '--query',
-                    'summary dataset=%s' % args.dataset,
-                    '--format=json']
-            output_summary = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-            log.debug(output_summary)
-            summary = json.loads(output_summary)
-
-            # check to make sure dataset is valid
-            if summary['status'] == 'fail':
-                log.error('Error querying dataset with das_client:')
-                log.error(summary['reason'])
-                raise RuntimeError('Error querying dataset with das_client')
-
-            # get required number of files
-            # can either have:
-            # < 0 : all files
-            # 0 - 1 : use that fraction of the dataset
-            # >= 1 : use that number of files
-            num_dataset_files = int(summary['data'][0]['summary'][0]['nfiles'])
-            if args.totalFiles < 0:
-                args.totalFiles = num_dataset_files
-            elif args.totalFiles < 1:
-                args.totalFiles = math.ceil(args.totalFiles * num_dataset_files)
-            elif args.totalFiles > num_dataset_files:
-                log.warning("You specified more files than exist. Using all %d files.",
-                            num_dataset_files)
-
-            # Figure out correct number of jobs
-            total_num_jobs = int(math.ceil(args.totalFiles / float(args.filesPerJob)))
-
-            ###########################################################################
-            # Make a list of input files for each job to avoid doing it on worker node
-            ###########################################################################
-            log.info("Querying DAS for filenames, please be patient...")
-            cmds = ['das_client.py',
-                    '--query',
-                    'file dataset=%s' % args.dataset,
-                    '--limit=%d' % args.totalFiles]
-            output_files = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-
-            list_of_files = ['"{0}"'.format(line) for line in output_files.splitlines()
-                             if line.lower().startswith("/store")]
+            # Get list of files from DAS
+            list_of_files = create_list_of_files_from_das(args.dataset, args.totalFiles)
             input_file_list = generate_filelist_filename(args.dataset[1:])
-            create_filelist(list_of_files, args.filesPerJob, input_file_list)
         else:
             # Get files from user's file
             with open(args.filelist) as flist:
                 list_of_files = ['"{0}"'.format(line.strip()) for line in flist
                                  if line.lower().startswith("/store")]
-            total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
             input_file_list = "filelist_user.py"
-            create_filelist(list_of_files, args.filesPerJob, input_file_list)
+
+        total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
+        create_filelist(list_of_files, args.filesPerJob, input_file_list)
 
     # Create sandbox of user's files
     # TODO: allow custom files to be added
