@@ -385,8 +385,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         else:
             # Get files from user's file
             with open(args.filelist) as flist:
-                list_of_files = ['"{0}"'.format(line.strip()) for line in flist if line]
-            filelist_filename = "filelist_user.py"
+                list_of_files = ['"{0}"'.format(line.strip()) for line in flist if line.strip()]
+            filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
 
         total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
         create_filelist(list_of_files, args.filesPerJob, filelist_filename)
