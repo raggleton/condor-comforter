@@ -105,10 +105,26 @@ fi
 cd src # run everything inside CMSSW_BASE/src
 
 # Setup new libs to point to local ones
-export LD_LIBRARY_PATH=${worker}/${cmssw_version}/biglib/${SCRAM_ARCH}:${worker}/${cmssw_version}/lib/${SCRAM_ARCH}:${worker}/${cmssw_version}/external/${SCRAM_ARCH}/lib:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=$CMSSW_BASE/biglib/${SCRAM_ARCH}:$CMSSW_BASE/lib/${SCRAM_ARCH}:$CMSSW_BASE/external/${SCRAM_ARCH}/lib:$LD_LIBRARY_PATH
+# export PYTHONPATH=$CMSSW_BASE/python:$CMSSW_BASE/lib/${SCRAM_ARCH}:$PYTHONPATH
+# export ROOT_INCLUDE_PATH=$CMSSW_BASE/src:${ROOT_INCLUDE_PATH}
+# export SRT_ROOT_INCLUDE_PATH_SCRAMRTDEL=$CMSSW_BASE/src:${SRT_ROOT_INCLUDE_PATH_SCRAMRTDEL}
+# export SRT_RIVET_ANALYSIS_PATH_SCRAMRTDEL=$CMSSW_BASE/src:${SRT_RIVET_ANALYSIS_PATH_SCRAMRTDEL}
+# export PATH=$CMSSW_BASE/bin/slc6_amd64_gcc493:$CMSSW_BASE/external/slc6_amd64_gcc493/bin:${PATH}
+# export SRT_CMSSW_SEARCH_PATH_SCRAMRTDEL=$CMSSW_BASE/src:$CMSSW_BASE/external/slc6_amd64_gcc493/data:${SRT_CMSSW_SEARCH_PATH_SCRAMRTDEL}
+# export SRT_PATH_SCRAMRT=$CMSSW_BASE/bin/slc6_amd64_gcc493:$CMSSW_BASE/external/slc6_amd64_gcc493/bin:${SRT_PATH_SCRAMRT}
+# export RIVET_ANALYSIS_PATH=$CMSSW_BASE/lib/slc6_amd64_gcc493:${RIVET_ANALYSIS_PATH}
+# export SRT_LOCALRT_SCRAMRTDEL=$CMSSW_BASE
+# export LOCALRT=$CMSSW_BASE
+# export SRT_LOCALRT_SCRAMRTDEL=$CMSSW_BASE
+# export SRT_CMSSW_BASE_SCRAMRTDEL=$CMSSW_BASE
+# export SRT_PYTHONPATH_SCRAMRT=$CMSSW_BASE/python:$CMSSW_BASE/lib/$SCRAM_ARCH:$SRT_PYTHONPATH_SCRAMRT
+# export CMSSW_SEARCH_PATH=$CMSSW_BASE/src:$CMSSW_BASE/external/$SCRAM_ARCH/data
+# export SRT_LD_LIBRARY_PATH_SCRAMRT=$CMSSW_BASE/biglib/$SCRAM_ARCH:$CMSSW_BASE/lib/$SCRAM_ARCH:$CMSSW_BASE/external/slc6_amd64_gcc493/lib:$SRT_LD_LIBRARY_PATH_SCRAMRT
+
 echo "========================="
-echo "New LD_LIBRARY_PATH:"
-echo $LD_LIBRARY_PATH
+echo "New env vars"
+printenv
 echo "========================="
 
 ###############################################################################
