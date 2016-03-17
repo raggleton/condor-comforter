@@ -317,8 +317,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         else:
             # Get files from user's file
             with open(args.filelist) as flist:
-                list_of_files = ['"{0}"'.format(line.strip()) for line in flist
-                                 if line.lower().startswith("/store")]
+                list_of_files = ['"{0}"'.format(line.strip()) for line in flist if line]
             input_file_list = "filelist_user.py"
 
         total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
