@@ -138,7 +138,7 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     return sandbox_location
 
 
-def create_list_of_files_from_das(dataset, num_files):
+def get_list_of_files_from_das(dataset, num_files):
     """Create list of num_files filenames for dataset using DAS.
 
     Parameters
@@ -343,7 +343,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             raise RuntimeError('You must specify a dataset or a filelist')
         if not args.filelist:
             # Get list of files from DAS
-            list_of_files = create_list_of_files_from_das(args.dataset, args.totalFiles)
+            list_of_files = get_list_of_files_from_das(args.dataset, args.totalFiles)
             filelist_filename = generate_filelist_filename(args.dataset[1:])
         else:
             # Get files from user's file
