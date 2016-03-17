@@ -58,6 +58,71 @@ def create_filelist(list_of_files, files_per_job, filelist_filename):
     log.info("List of files for each jobs written to %s", filelist_filename)
 
 
+def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_filelist):
+    """Create sandbox gzip of libs/headers/py/config/input filelist, & copy to HDFS.
+
+    Parameters
+    ----------
+    sandbox_filename : str
+        Filename of sandbox
+    sandbox_dest_dir : str
+        Destination directory for sandbox. Must be on /hdfs
+    config_filename : str
+        Filename of CMSSW config file to be included.
+    input_filelist : str or None
+        Filename of list of files for worker. If None, will not be added, and
+        worker will use whatever files are specified in config.
+
+    Returns
+    -------
+    str
+        Location of sandbox zip on /hdfs
+
+    Raises
+    ------
+    Exception
+        If sandbox_dest_dir is not on /hdfs
+    """
+    sandbox_filename = "sandbox.tgz"
+    sandbox_dirs = ['biglib', 'lib', 'module', 'python']
+    tar = tarfile.open(sandbox_filename, mode="w:gz", dereference=True)
+    cmssw_base = os.environ['CMSSW_BASE']
+    for directory in sandbox_dirs:
+        fullPath = os.path.join(cmssw_base, directory)
+        if os.path.isdir(fullPath):
+            log.debug('Adding %s to tar', fullPath)
+            tar.add(fullPath, directory, recursive=True)
+
+    # special case for /src - need to include src/package/sub_package/data
+    # and src/package/sub_package/interface
+    src_dirs = ['data', 'interface']
+    src_path = os.path.join(cmssw_base, 'src')
+    for root, dirs, files in os.walk(os.path.join(cmssw_base, 'src')):
+        if os.path.basename(root) in src_dirs:
+            d = root.replace(src_path, 'src')
+            log.debug('Adding %s to tar', d)
+            tar.add(root, d, recursive=True)
+
+    # add in the config file and input filelist
+    tar.add(config_filename, arcname="config.py")
+    if input_filelist:
+        tar.add(input_filelist, arcname="filelist.py")
+
+    # TODO: add in any other files the user wants
+
+    tar.close()
+
+    # copy to /hdfs or /storage to avoid transfer/copying issues
+    sandbox_location = os.path.join(sandbox_dest_dir, sandbox_filename)
+    if sandbox_dest_dir.startswith('/hdfs'):
+        log.info("Copying %s to %s", sandbox_filename, sandbox_location)
+        subprocess.call(['hadoop', 'fs', '-copyFromLocal', '-f',
+                         sandbox_filename, sandbox_location.replace("/hdfs", "")])
+    else:
+        raise Exception("Not a valid output dir for sandbox - not /hdfs")
+    return sandbox_location
+
+
 def cmsRunCondor(in_args=sys.argv[1:]):
     """Creates a condor job description file with the correct arguments,
     and optionally submit it.
@@ -222,46 +287,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             input_file_list = "filelist_user.py"
             create_filelist(list_of_files, args.filesPerJob, input_file_list)
 
-    ###########################################################################
-    # Make sandbox of user's libs/c++/py files
-    ###########################################################################
-    sandbox_file = "sandbox.tgz"
-    sandbox_dirs = ['biglib', 'lib', 'module', 'python']
-    tar = tarfile.open(sandbox_file, mode="w:gz", dereference=True)
-    cmssw_base = os.environ['CMSSW_BASE']
-    for directory in sandbox_dirs:
-        fullPath = os.path.join(cmssw_base, directory)
-        if os.path.isdir(fullPath):
-            log.debug('Adding %s to tar', fullPath)
-            tar.add(fullPath, directory, recursive=True)
-
-    # special case for /src - need to include src/package/sub_package/data
-    # and src/package/sub_package/interface
-    src_dirs = ['data', 'interface']
-    src_path = os.path.join(cmssw_base, 'src')
-    for root, dirs, files in os.walk(os.path.join(cmssw_base, 'src')):
-        if os.path.basename(root) in src_dirs:
-            d = root.replace(src_path, 'src')
-            log.debug('Adding %s to tar', d)
-            tar.add(root, d, recursive=True)
-
-    # add in the config file and input filelist
-    tar.add(args.config, arcname="config.py")
-    if input_file_list:
-        tar.add(input_file_list, arcname="filelist.py")
-
-    # TODO: add in any other files the user wants
-
-    tar.close()
-
-    # copy to /hdfs or /storage to avoid transfer/copying issues
-    sandbox_location = os.path.join(args.outputDir, sandbox_file)
-    if args.outputDir.startswith('/hdfs'):
-        log.info("Copying %s to %s", sandbox_file, args.outputDir)
-        subprocess.call(['hadoop', 'fs', '-copyFromLocal', '-f',
-                         sandbox_file, args.outputDir.replace("/hdfs", "")])
-    else:
-        raise Exception("Not a valid output dir for sandbox - not /hdfs")
+    # Create sandbox of user's files
+    # TODO: allow custom files to be added
+    sandbox_location = setup_sandbox("sandbox.tgz", args.outputDir, args.config, input_file_list)
 
     ###########################################################################
     # Make a condor submission script
