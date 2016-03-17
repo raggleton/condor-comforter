@@ -203,6 +203,45 @@ def get_list_of_files_from_das(dataset, num_files):
     return list_of_files
 
 
+def write_condor_job_file(job_filename, log_dir, args_str, num_jobs):
+    """Write condor job file.
+
+
+    Parameters
+    ----------
+    job_filename : str
+        filename of job file
+    log_dir : str
+        Dir for logs
+    args_str : str
+        Argument string to pass to worker script
+    num_jobs : int
+        Total number of jobs. For DAGs this should be 1 as the DAG should
+        take care of the actual total number of jobs.
+    """
+
+    # Get job file template
+    script_dir = os.path.dirname(__file__)
+    with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
+        job_template = template.read()
+
+    job = job_template.replace("SEDINITIAL", "")  # don't use initialdir for now
+    log_filename = os.path.join(log_dir, os.path.basename(job_filename).replace(".condor", ""))
+    if not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
+    log.info('Logs for each job will be written to %s', log_dir)
+    job = job.replace("SEDLOG", log_filename)
+    job = job.replace("SEDARGS", args_str)
+    job = job.replace("SEDEXE", os.path.join(script_dir, 'cmsRun_worker.sh'))
+    job = job.replace("SEDNJOBS", num_jobs)
+    transfers = []
+    job = job.replace("SEDINPUTFILES", ", ".join(transfers))
+
+    with open(job_filename, 'w') as submit_script:
+        submit_script.write(job)
+    log.info('New condor submission script written to %s', job_filename)
+
+
 def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jobs, job_name):
     """Write DAG description file.
 
@@ -354,6 +393,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
         create_filelist(list_of_files, args.filesPerJob, filelist_filename)
 
+    log.debug("Will be submitting %d jobs, running over %d files",
+              total_num_jobs, args.totalFiles)
+
     # Create sandbox of user's files
     # TODO: allow custom files to be added
     sandbox_location = setup_sandbox("sandbox.tgz", args.outputDir, args.config, filelist_filename)
@@ -361,29 +403,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Make a condor submission script
     ###########################################################################
-    log.debug("Will be submitting %d jobs, running over %d files",
-              total_num_jobs, args.totalFiles)
-
-    script_dir = os.path.dirname(__file__)
-    with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
-        job_template = template.read()
-
     config_filename = os.path.basename(args.config)
-
-    time = strftime("%H%M%S")
-    date = strftime("%d_%b_%y")
     if not args.outputScript:
         args.outputScript = '%s_%s.condor' % (config_filename.replace(".py", ""),
-                                              time)
-
-    job = job_template.replace("SEDINITIAL", "")  # don't use initialdir for now
-    # log_dir = "%s/%s/%s" % (args.log, date, dset_uscore)
-    log_dir = os.path.realpath(args.log)
-    log_filename = os.path.join(log_dir, os.path.basename(args.outputScript).replace(".condor", ""))
-    if not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
-    log.info('Logs for each job will be written to %s', log_dir)
-    job = job.replace("SEDLOG", log_filename)
+                                              strftime("%H%M%S"))
 
     # Construct args to pass to cmsRun_worker.sh on the worker node
     args_dict = dict(output=args.outputDir,
@@ -393,16 +416,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
     if args.profile:
         args_str += ' -p'
-    job = job.replace("SEDARGS", args_str)
-    job = job.replace("SEDEXE", os.path.join(script_dir, 'cmsRun_worker.sh'))
-    job = job.replace("SEDNJOBS", str(1) if args.dag else str(total_num_jobs))
-    # transfers = [os.path.abspath(args.config), input_file_list, sandbox_file]
-    transfers = []
-    job = job.replace("SEDINPUTFILES", ", ".join(transfers))
 
-    with open(args.outputScript, 'w') as submit_script:
-        submit_script.write(job)
-    log.info('New condor submission script written to %s', args.outputScript)
+    num_jobs = str(1) if args.dag else str(total_num_jobs)
+
+    write_condor_job_file(args.outputScript, args.log, args_str, num_jobs)
 
     ###########################################################################
     # Setup DAG file if needed
