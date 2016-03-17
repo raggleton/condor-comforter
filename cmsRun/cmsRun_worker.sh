@@ -84,15 +84,25 @@ echo "... sourcing CMS default environment from CVMFS"
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 echo "... creating CMSSW project area"
 scramv1 project CMSSW ${cmssw_version}
-cd ${cmssw_version}/src  # run everything inside CMSSW_BASE/src
+cd ${cmssw_version}/src
 eval `scramv1 runtime -sh`  # cmsenv
 echo "${cmssw_version} has been set up"
 
 ###############################################################################
 # Extract sandbox of user's libs, headers, and python files
 ###############################################################################
+cd ..
 hadoop fs -copyToLocal ${sandbox#/hdfs} sandbox.tgz  # assumes this is on HDFS!
 tar xvzf sandbox.tgz
+
+cp $script src/
+
+if [ $doProfile == 0 ]; then
+    # only need filelist if not profiling - in profile mode use file in config
+    cp $filelist src/
+fi
+
+cd src # run everything inside CMSSW_BASE/src
 
 # Setup new libs to point to local ones
 export LD_LIBRARY_PATH=${worker}/${cmssw_version}/biglib/${SCRAM_ARCH}:${worker}/${cmssw_version}/lib/${SCRAM_ARCH}:${worker}/${cmssw_version}/external/${SCRAM_ARCH}/lib:$LD_LIBRARY_PATH
