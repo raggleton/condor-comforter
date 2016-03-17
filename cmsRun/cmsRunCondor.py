@@ -131,8 +131,8 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     sandbox_location = os.path.join(sandbox_dest_dir, sandbox_filename)
     if sandbox_dest_dir.startswith('/hdfs'):
         log.info("Copying %s to %s", sandbox_filename, sandbox_location)
-        subprocess.call(['hadoop', 'fs', '-copyFromLocal', '-f',
-                         sandbox_filename, sandbox_location.replace("/hdfs", "")])
+        subprocess.check_call(['hadoop', 'fs', '-copyFromLocal', '-f',
+                               sandbox_filename, sandbox_location.replace("/hdfs", "")])
     else:
         raise Exception("Not a valid output dir for sandbox - not /hdfs")
     return sandbox_location
@@ -205,7 +205,6 @@ def get_list_of_files_from_das(dataset, num_files):
 
 def write_condor_job_file(job_filename, log_dir, args_str, num_jobs):
     """Write condor job file.
-
 
     Parameters
     ----------
@@ -355,8 +354,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         try:
             os.makedirs(args.outputDir)
         except OSError as e:
-            log.error("Cannot make output dir %s", args.outputDir)
-            raise
+            log.exception("Cannot make output dir %s", args.outputDir)
 
     if args.filesPerJob > args.totalFiles and args.totalFiles >= 1:
         log.error("You can't have filesPerJob > totalFiles!")
@@ -440,10 +438,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     if not args.dry:
         if not args.dag:
-            subprocess.call(['condor_submit', args.outputScript])
+            subprocess.check_call(['condor_submit', args.outputScript])
 
         if args.dag:
-            subprocess.call(['condor_submit_dag', args.dag])
+            subprocess.check_call(['condor_submit_dag', args.dag])
             print "Check DAG status:"
             print "DAGstatus.py", status_filename
 
