@@ -203,6 +203,34 @@ def create_list_of_files_from_das(dataset, num_files):
     return list_of_files
 
 
+def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jobs, job_name):
+    """Write DAG description file.
+
+    Parameters
+    ----------
+    dag_filepath : str
+        Filepath for DAG file
+    status_filename : str
+        Filepath for DAG status file
+    condor_jobscript : str
+        Filepath for condor job submit file
+    total_num_jobs : int
+        Total number of jobs to submit
+    job_name : str
+        Name of job. An index will be added for each job
+    """
+    if not os.path.isdir(os.path.dirname(dag_filepath)):
+        os.makedirs(os.path.dirname(dag_filepath))
+    log.info("DAG Filename: %s", dag_filepath)
+    with open(dag_filepath, "w") as dag_file:
+        for job_ind in xrange(total_num_jobs):
+            jobName = "%s_%d" % (job_name, job_ind)
+            dag_file.write('JOB %s %s\n' % (jobName, condor_jobscript))
+            dag_file.write('VARS %s index="%d"\n' % (jobName, job_ind))
+            dag_file.write('RETRY %s 3\n' % jobName)
+        dag_file.write("NODE_STATUS_FILE %s 30\n" % status_filename)
+
+
 def cmsRunCondor(in_args=sys.argv[1:]):
     """Creates a condor job description file with the correct arguments,
     and optionally submit it.
@@ -299,13 +327,16 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if not os.path.exists(args.log):
         os.mkdir(args.log)
 
+    if args.dag:
+        args.dag = os.path.realpath(args.dag)
+
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
     # but only if we're not profiling
     ###########################################################################
     # placehold vars
     total_num_jobs = 1
-    input_file_list = None
+    filelist_filename = None
 
     if not args.profile:
         if not args.filelist and not args.dataset:
@@ -313,19 +344,19 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if not args.filelist:
             # Get list of files from DAS
             list_of_files = create_list_of_files_from_das(args.dataset, args.totalFiles)
-            input_file_list = generate_filelist_filename(args.dataset[1:])
+            filelist_filename = generate_filelist_filename(args.dataset[1:])
         else:
             # Get files from user's file
             with open(args.filelist) as flist:
                 list_of_files = ['"{0}"'.format(line.strip()) for line in flist if line]
-            input_file_list = "filelist_user.py"
+            filelist_filename = "filelist_user.py"
 
         total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
-        create_filelist(list_of_files, args.filesPerJob, input_file_list)
+        create_filelist(list_of_files, args.filesPerJob, filelist_filename)
 
     # Create sandbox of user's files
     # TODO: allow custom files to be added
-    sandbox_location = setup_sandbox("sandbox.tgz", args.outputDir, args.config, input_file_list)
+    sandbox_location = setup_sandbox("sandbox.tgz", args.outputDir, args.config, filelist_filename)
 
     ###########################################################################
     # Make a condor submission script
@@ -377,28 +408,15 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Setup DAG file if needed
     ###########################################################################
     if args.dag:
-        args.dag = os.path.realpath(args.dag)
-        dag_name = args.dag
-        if not os.path.isdir(os.path.dirname(dag_name)):
-            os.makedirs(os.path.dirname(dag_name))
-        status_file = dag_name.replace(".dag", ".status")
-        log.info("DAG Filename: %s", dag_name)
-        with open(dag_name, "w") as dag_file:
-            dag_file.write("# Using config file %s\n" % args.config)
+        if args.filelist:
+            job_name = os.path.splitext(os.path.basename(args.filelist))[0][:20]
+        elif args.profile:
+            job_name = "profiling"
+        else:
+            job_name = args.dataset[1:].replace("/", "_").replace("-", "_")
 
-            if args.filelist:
-                dset_uscore = os.path.splitext(os.path.basename(args.filelist))[0][:20]
-            elif args.profile:
-                dset_uscore = "profiling"
-            else:
-                dset_uscore = args.dataset[1:].replace("/", "_").replace("-", "_")
-
-            for job_ind in xrange(total_num_jobs):
-                jobName = "%s_%d" % (dset_uscore, job_ind)
-                dag_file.write('JOB %s %s\n' % (jobName, args.outputScript))
-                dag_file.write('VARS %s index="%d"\n' % (jobName, job_ind))
-                dag_file.write('RETRY %s 3\n' % jobName)
-            dag_file.write("NODE_STATUS_FILE %s 30\n" % status_file)
+        status_filename = args.dag.replace(".dag", ".status")
+        write_dag_file(args.dag, status_filename, args.outputScript, total_num_jobs, job_name)
 
     ###########################################################################
     # submit to queue unless dry run
@@ -408,9 +426,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             subprocess.call(['condor_submit', args.outputScript])
 
         if args.dag:
-            subprocess.call(['condor_submit_dag', dag_name])
+            subprocess.call(['condor_submit_dag', args.dag])
             print "Check DAG status:"
-            print "DAGstatus.py", status_file
+            print "DAGstatus.py", status_filename
 
     # Return job properties
     return dict(dataset=args.dataset,
@@ -418,7 +436,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 totalNumJobs=total_num_jobs,
                 totaNumFiles=args.totalFiles,
                 filesPerJob=args.filesPerJob,
-                fileList=input_file_list,
+                fileList=filelist_filename,
                 config=args.config,
                 condorScript=args.outputScript
                 )
