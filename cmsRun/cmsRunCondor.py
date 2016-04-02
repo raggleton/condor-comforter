@@ -394,9 +394,18 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     log.debug("Will be submitting %d jobs, running over %d files",
               total_num_jobs, args.totalFiles)
 
+    ###########################################################################
     # Create sandbox of user's files
+    ###########################################################################
     # TODO: allow custom files to be added
-    sandbox_location = setup_sandbox("sandbox.tgz", args.outputDir, args.config, filelist_filename)
+    sandbox_local = "sandbox.tgz"
+    sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
+                                     args.config, filelist_filename)
+    # rm local files
+    if os.path.isfile(sandbox_local):
+        os.remove(sandbox_local)
+    if os.path.isfile(filelist_filename):
+        os.remove(filelist_filename)
 
     ###########################################################################
     # Make a condor submission script
