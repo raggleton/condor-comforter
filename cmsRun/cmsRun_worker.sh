@@ -25,8 +25,10 @@ ind="" # ind is the job number
 arch="" # architecture
 cmssw_version="" # cmssw version
 sandbox="" # sandbox location
-doProfile=0  # do profiling - runs with callgrind
-while getopts ":s:f:o:i:a:c:S:p" opt; do
+doProfile=0 # run in profiling mode - use whatever files specified in config, don't override
+doCallgrind=0  # do profiling - runs with callgrind
+doValgrind=0  # do memcheck - runs with valgrind
+while getopts ":s:f:o:i:a:c:S:p;m" opt; do
     case $opt in
         \?)
             echo "Invalid option $OPTARG" >&2
@@ -65,7 +67,13 @@ while getopts ":s:f:o:i:a:c:S:p" opt; do
             sandbox=$OPTARG
             ;;
         p)
-            echo "Profiling"
+            echo "Running callgrind"
+            doCallgrind=1
+            doProfile=1
+            ;;
+        m)
+            echo "Running valgrind memcheck"
+            doValgrind=1
             doProfile=1
             ;;
     esac
@@ -169,9 +177,12 @@ echo "========================="
 # Now finally run script!
 # TODO: some automated retry system
 ###############################################################################
-if [ $doProfile == 1 ]; then
+if [[ $doCallgrind == 1 ]]; then
     echo "Running with callgrind"
     valgrind --tool=callgrind cmsRun $wrapper
+elif [[ $doValgrind == 1 ]]; then
+    echo "Running with valgrind"
+    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all cmsRun $wrapper
 else
     /usr/bin/time -v cmsRun $wrapper
 fi

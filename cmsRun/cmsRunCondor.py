@@ -312,8 +312,14 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         help="Location to store job stdout/err/log files. "
                         "Default is $PWD/logs, but would recommend to put it on /storage",
                         default='logs')
-    parser.add_argument('--profile',
-                        help='Run callgrind. Note that in this mode, '
+    parser.add_argument('--callgrind',
+                        help='Run using callgrind. Note that in this mode, '
+                        'it will use the files and # evts in the config. '
+                        'You do not need to specify --filesPerJob, --totalFiles, or --dataset. '
+                        'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
+                        action='store_true')
+    parser.add_argument('--valgrind',
+                        help='Run using valgrind to find mem leaks. Note that in this mode, '
                         'it will use the files and # evts in the config. '
                         'You do not need to specify --filesPerJob, --totalFiles, or --dataset. '
                         'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
@@ -375,7 +381,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     total_num_jobs = 1
     filelist_filename = None
 
-    if not args.profile:
+    if not args.valgrind and not args.callgrind:
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
         if not args.filelist:
@@ -421,7 +427,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                      sandbox=sandbox_location)
     args_str = "-o {output} -i $({ind}) -a $ENV(SCRAM_ARCH) " \
                "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
-    if args.profile:
+    if args.valgrind:
+        args_str += ' -m'
+    if args.callgrind:
         args_str += ' -p'
 
     num_jobs = str(1) if args.dag else str(total_num_jobs)
@@ -434,8 +442,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.dag:
         if args.filelist:
             job_name = os.path.splitext(os.path.basename(args.filelist))[0][:20]
-        elif args.profile:
-            job_name = "profiling"
+        elif args.callgrind:
+            job_name = "callgrind"
+        elif args.valgrind:
+            job_name = "valgrind"
         else:
             job_name = args.dataset[1:].replace("/", "_").replace("-", "_")
 
