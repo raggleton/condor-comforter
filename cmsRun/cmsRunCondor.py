@@ -262,10 +262,10 @@ def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jo
     log.info("DAG Filename: %s", dag_filepath)
     with open(dag_filepath, "w") as dag_file:
         for job_ind in xrange(total_num_jobs):
-            jobName = "%s_%d" % (job_name, job_ind)
+            jobName = "%d_%s" % (job_ind, job_name)
             dag_file.write('JOB %s %s\n' % (jobName, condor_jobscript))
             dag_file.write('VARS %s index="%d"\n' % (jobName, job_ind))
-            dag_file.write('RETRY %s 3\n' % jobName)
+            dag_file.write('RETRY %s 5\n' % jobName)
         dag_file.write("NODE_STATUS_FILE %s 30\n" % status_filename)
 
 
