@@ -31,6 +31,80 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+class DatasetFile(object):
+    """Hold info about a file in a dataset: filename and the lumisections it covers."""
+
+    def __init__(self, name, lumi):
+        self.name = name
+        self.lumi = lumi
+        self.parents = []
+
+    def has_lumi(self, ls):
+        """Returns whether this file contains lumisection ls"""
+        for lr in self.lumi:
+            if lr[0] <= ls <= lr[1]:
+                return True
+        return False
+
+    def __repr__(self):
+        return 'DatasetFile(name={name:s}, lumi={lumi:s}, parents={parents:s})'.format(**self.__dict__)
+
+
+def find_matching_ls_range(raw_files, ls_range):
+    """Find all files that have lumisections that fully cover ls_range.
+
+    Parameters
+    ----------
+    raw_files : list[DatasetFile]
+        List of files to match against.
+    ls_range : list[int, int]
+        Edges of lumisection range to match, e.g. [610, 621]
+
+    Returns
+    -------
+    list[DatasetFile]
+        List of unique DatasetFiles that cover ls_range.
+    """
+    matching_files = []
+    for ls in xrange(ls_range[0], ls_range[1] + 1):
+        matching_files.extend([f for f in raw_files if f.has_lumi(ls)])
+    return list(set(matching_files))
+
+
+def find_matching_files(raw_files, ls_ranges):
+    """Find all files in raw_files that cover all lumisections in ls_ranges
+
+    Parameters
+    ----------
+    raw_files : list[DatasetFile]
+        List of files to match against.
+    ls_range : list[list[int, int]]
+        List of edges of lumisection ranges to match,
+        e.g. [[610, 621], [701, 711]]
+
+    Returns
+    -------
+    list[DatasetFile]
+        List of unique DatasetFiles that cover ls_ranges.
+
+    Raises
+    ------
+    RuntimeError
+        If no files in `raw_files` match the lumisection.
+    """
+    matching_files = []
+    for lsr in ls_ranges:
+        res = find_matching_ls_range(raw_files, lsr)
+        if not res:
+            print lsr
+            print len(raw_files)
+            for rf in raw_files:
+                print rf
+            raise RuntimeError('No matching RAW file for this LS %s' % lsr)
+        matching_files.extend(res)
+    return list(set(matching_files))
+
+
 def generate_filelist_filename(dataset):
     """Generate a filelist filename from a dataset name."""
     dset_uscore = dataset[1:]
@@ -49,26 +123,55 @@ def grouper(iterable, n, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 
-def create_filelist(list_of_files, files_per_job, filelist_filename):
+def group_files_by_files_per_job(list_of_files, files_per_job):
+    """Makes groups of files, splitting into groups of files_per_job.
+
+    Parameters
+    ----------
+    list_of_files : list[obj]
+        List of files to be grouped
+    files_per_job : int
+        Number of files per group
+
+    Returns
+    -------
+    list[list[obj]]
+        List of file groups, one per job/group.
+    """
+    groups = []
+    for flist in grouper(list_of_files, files_per_job):
+        group = filter(None, list(flist))
+        groups.append(group)
+    return groups
+
+
+def create_filelist(jobs_input_files, files_per_job, filelist_filename):
     """Write python dict to file with input files for each job.
     It can then be used in worker script to override the PoolSource.
     Each job will have files_per_job input files.
 
     Parameters
     ----------
-    list_of_files : list[str]
-        List of input files for cmsRun.
+    jobs_input_files : list[list[DatasetFile]]
+        List of input files for each cmsRun job.
     files_per_job : int
         Number of files to process per job
     filelist_filename : str
         Filename to write python dict to.
-
     """
     with open(filelist_filename, "w") as file_list:
         file_list.write("fileNames = {")
-        for n, chunk in enumerate(grouper(list_of_files, files_per_job)):
-            file_list.write("%d: [%s],\n" % (n, ', '.join(filter(None, chunk))))
-        file_list.write("}")
+        for n, flist in enumerate(jobs_input_files):
+            file_list.write("%d: [%s],\n" % (n, ', '.join(["'%s'" % f.name for f in flist if f])))
+        file_list.write("}\n")
+
+        file_list.write("secondaryFileNames = {")
+        for n, flist in enumerate(jobs_input_files):
+            job_parents = []
+            for f in flist:
+                job_parents.extend([p.name for p in f.parents])
+            file_list.write("%d: [%s],\n" % (n, ', '.join(["'%s'" % x for x in set(job_parents)])))
+        file_list.write("}\n")
 
     log.info("List of files for each jobs written to %s", filelist_filename)
 
@@ -150,8 +253,8 @@ def get_list_of_files_from_das(dataset, num_files):
 
     Returns
     -------
-    list[str]
-        List of filenames.
+    list[DatasetFile]
+        List of DatasetFile obj with filename and lumisections for each file.
 
     Raises
     ------
@@ -182,7 +285,9 @@ def get_list_of_files_from_das(dataset, num_files):
     # >= 1 : use that number of files
     num_dataset_files = int(summary['data'][0]['summary'][0]['nfiles'])
     if num_files < 0:
-        num_files = num_dataset_files
+        # the + 2 here is a fudge factor, to account for certain datasets which
+        # have extra files are duds, so we don't actually get all the files we want
+        num_files = num_dataset_files + 2
     elif num_files < 1:
         num_files = math.ceil(num_files * num_dataset_files)
     elif num_files > num_dataset_files:
@@ -191,16 +296,22 @@ def get_list_of_files_from_das(dataset, num_files):
                     num_dataset_files)
 
     # Make a list of input files for each job to avoid doing it on worker node
-    log.info("Querying DAS for filenames, please be patient...")
+    log.info("Querying DAS for %d filenames, please be patient...", num_files)
     cmds = ['das_client.py',
             '--query',
-            'file dataset=%s' % dataset,
-            '--limit=%d' % num_files]
-    output_files = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-
-    list_of_files = ['"{0}"'.format(line) for line in output_files.splitlines()
-                     if line.lower().startswith("/store")]
-    return list_of_files
+            'file,lumi dataset=%s' % dataset,
+            '--limit=%d' % (num_files),
+            '--format=json']
+    log.debug(' '.join(cmds))
+    das_output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+    file_dict = json.loads(das_output)
+    try:
+        files = [DatasetFile(name=entry['file'][0]['name'], lumi=entry['lumi'][0]['number'])
+                 for entry in file_dict['data']]
+    except KeyError as e:
+        print file_dict
+        raise e
+    return files
 
 
 def write_condor_job_file(job_filename, log_dir, args_str, num_jobs):
@@ -283,6 +394,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         "/hdfs is recommended")
     parser.add_argument("--dataset",
                         help="Name of dataset you want to run over")
+    parser.add_argument("--secondaryDataset",
+                        help="Name of secondary dataset. This allows you to do the "
+                        "'2-file' solution, e.g.to run both RAW and RECO in the "
+                        "same job. The --filesPerJob and --totalFiles options "
+                        "will then apply to the child dataset (specified with --dataset)")
     parser.add_argument("--filesPerJob",
                         help="Number of files to run over, per job.",
                         type=int, default=5)
@@ -366,6 +482,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         log.error("You can't have filesPerJob > totalFiles!")
         raise RuntimeError
 
+    if args.secondaryDataset:
+        log.info("Running 2-file solution with parent dataset %s", args.secondaryDataset)
+
     # make an output directory for log files
     if not os.path.exists(args.log):
         os.mkdir(args.log)
@@ -382,20 +501,28 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     filelist_filename = None
 
     if not args.valgrind and not args.callgrind:
+        list_of_files, list_of_secondary_files = None, None
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
-        if not args.filelist:
+        if args.filelist:
+            # Get files from user's file
+            with open(args.filelist) as flist:
+                list_of_files = [line.strip() for line in flist if line.strip()]
+            filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
+        else:
             # Get list of files from DAS
             list_of_files = get_list_of_files_from_das(args.dataset, args.totalFiles)
             filelist_filename = generate_filelist_filename(args.dataset[1:])
-        else:
-            # Get files from user's file
-            with open(args.filelist) as flist:
-                list_of_files = ['"{0}"'.format(line.strip()) for line in flist if line.strip()]
-            filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
+            if args.secondaryDataset:
+                list_of_secondary_files = get_list_of_files_from_das(args.secondaryDataset, -1)
+                # do lumisection matching between primary and secondary datasets
+                for f in list_of_files:
+                    f.parents = find_matching_files(list_of_secondary_files, f.lumi)
 
-        total_num_jobs = int(math.ceil(len(list_of_files) / float(args.filesPerJob)))
-        create_filelist(list_of_files, args.filesPerJob, filelist_filename)
+        # figure out job grouping
+        job_files = group_files_by_files_per_job(list_of_files, args.filesPerJob)
+        total_num_jobs = len(job_files)
+        create_filelist(job_files, args.filesPerJob, filelist_filename)
 
     log.debug("Will be submitting %d jobs, running over %d files",
               total_num_jobs, args.totalFiles)
