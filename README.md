@@ -34,6 +34,8 @@ Features currently supported:
 
 - Run with a specified set of files
 
+- Specify additional input files needed for running
+
 - Easy monitoring of jobs using [`DAGstatus.py`](cmsRun/DAGstatus.py)
 
 - Profile cmsRun jobs with valgrind or callgrind
