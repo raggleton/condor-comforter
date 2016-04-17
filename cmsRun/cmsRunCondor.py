@@ -176,7 +176,8 @@ def create_filelist(jobs_input_files, files_per_job, filelist_filename):
     log.info("List of files for each jobs written to %s", filelist_filename)
 
 
-def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_filelist):
+def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename,
+                  input_filelist, additional_input_files):
     """Create sandbox gzip of libs/headers/py/config/input filelist, & copy to HDFS.
 
     Parameters
@@ -190,6 +191,8 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     input_filelist : str or None
         Filename of list of files for worker. If None, will not be added, and
         worker will use whatever files are specified in config.
+    additional_input_files : list[str]
+        List of additional input files to add to sandbox
 
     Returns
     -------
@@ -201,6 +204,8 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     Exception
         If sandbox_dest_dir is not on /hdfs
     """
+    log.info('Creating sandbox')
+
     sandbox_filename = "sandbox.tgz"
     sandbox_dirs = ['biglib', 'lib', 'module', 'python']
     tar = tarfile.open(sandbox_filename, mode="w:gz", dereference=True)
@@ -226,7 +231,12 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
     if input_filelist:
         tar.add(input_filelist, arcname="src/filelist.py")
 
-    # TODO: add in any other files the user wants
+    # add in any other files the user wants
+    for input_file in additional_input_files:
+        if not os.path.isfile(input_file):
+            raise IOError('Cannot find additional file %s' % input_file)
+        # we want it to end up in CMSSW_BASE/src, for now
+        tar.add(input_file, arcname=os.path.join('src', os.path.basename(input_file)))
 
     tar.close()
 
@@ -422,6 +432,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         help="Location to store job stdout/err/log files. "
                         "Default is $PWD/logs, but would recommend to put it on /storage",
                         default='logs')
+    parser.add_argument('--inputFile',
+                        help="Additional input file(s) needed by cmsRun.",
+                        action='append')
     parser.add_argument('--callgrind',
                         help='Run using callgrind. Note that in this mode, '
                         'it will use the files and # evts in the config. '
@@ -527,7 +540,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # TODO: allow custom files to be added
     sandbox_local = "sandbox.tgz"
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
-                                     args.config, filelist_filename)
+                                     args.config, filelist_filename,
+                                     args.inputFile)
     # rm local files
     if os.path.isfile(sandbox_local):
         os.remove(sandbox_local)
