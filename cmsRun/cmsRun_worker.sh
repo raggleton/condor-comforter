@@ -80,10 +80,6 @@ while getopts ":s:f:o:i:a:c:S:p;m" opt; do
 done
 
 ###############################################################################
-# TODO: Make a private area for the job incase there are multiple on the same worker?
-###############################################################################
-
-###############################################################################
 # Setup CMSSW
 ###############################################################################
 export SCRAM_ARCH=${arch}
@@ -103,37 +99,11 @@ cd ..
 hadoop fs -copyToLocal ${sandbox#/hdfs} sandbox.tgz  # assumes this is on HDFS!
 tar xvzf sandbox.tgz
 
-# cp $script src/
-
-# if [ $doProfile == 0 ]; then
-    # only need filelist if not profiling - in profile mode use file in config
-    # cp $filelist src/
-# fi
-
 cd src # run everything inside CMSSW_BASE/src
 
-# Setup new libs to point to local ones
-# export LD_LIBRARY_PATH=$CMSSW_BASE/biglib/${SCRAM_ARCH}:$CMSSW_BASE/lib/${SCRAM_ARCH}:$CMSSW_BASE/external/${SCRAM_ARCH}/lib:$LD_LIBRARY_PATH
-# export PYTHONPATH=$CMSSW_BASE/python:$CMSSW_BASE/lib/${SCRAM_ARCH}:$PYTHONPATH
-# export ROOT_INCLUDE_PATH=$CMSSW_BASE/src:${ROOT_INCLUDE_PATH}
-# export SRT_ROOT_INCLUDE_PATH_SCRAMRTDEL=$CMSSW_BASE/src:${SRT_ROOT_INCLUDE_PATH_SCRAMRTDEL}
-# export SRT_RIVET_ANALYSIS_PATH_SCRAMRTDEL=$CMSSW_BASE/src:${SRT_RIVET_ANALYSIS_PATH_SCRAMRTDEL}
-# export PATH=$CMSSW_BASE/bin/slc6_amd64_gcc493:$CMSSW_BASE/external/slc6_amd64_gcc493/bin:${PATH}
-# export SRT_CMSSW_SEARCH_PATH_SCRAMRTDEL=$CMSSW_BASE/src:$CMSSW_BASE/external/slc6_amd64_gcc493/data:${SRT_CMSSW_SEARCH_PATH_SCRAMRTDEL}
-# export SRT_PATH_SCRAMRT=$CMSSW_BASE/bin/slc6_amd64_gcc493:$CMSSW_BASE/external/slc6_amd64_gcc493/bin:${SRT_PATH_SCRAMRT}
-# export RIVET_ANALYSIS_PATH=$CMSSW_BASE/lib/slc6_amd64_gcc493:${RIVET_ANALYSIS_PATH}
-# export SRT_LOCALRT_SCRAMRTDEL=$CMSSW_BASE
-# export LOCALRT=$CMSSW_BASE
-# export SRT_LOCALRT_SCRAMRTDEL=$CMSSW_BASE
-# export SRT_CMSSW_BASE_SCRAMRTDEL=$CMSSW_BASE
-# export SRT_PYTHONPATH_SCRAMRT=$CMSSW_BASE/python:$CMSSW_BASE/lib/$SCRAM_ARCH:$SRT_PYTHONPATH_SCRAMRT
-# export CMSSW_SEARCH_PATH=$CMSSW_BASE/src:$CMSSW_BASE/external/$SCRAM_ARCH/data
-# export SRT_LD_LIBRARY_PATH_SCRAMRT=$CMSSW_BASE/biglib/$SCRAM_ARCH:$CMSSW_BASE/lib/$SCRAM_ARCH:$CMSSW_BASE/external/slc6_amd64_gcc493/lib:$SRT_LD_LIBRARY_PATH_SCRAMRT
-
-echo "========================="
-echo "New env vars"
+echo "==== New env vars ===="
 printenv
-echo "========================="
+echo "======================"
 
 ###############################################################################
 # Make a wrapper config
@@ -158,21 +128,21 @@ echo "for omod in process.outputModules.itervalues():" >> $wrapper
 echo "    omod.fileName = cms.untracked.string(process.output.fileName.value().replace('.root', '_${ind}.root'))" >> $wrapper
 echo ""
 
-echo "==== Wrapper script ====="
+echo "==== Wrapper script ===="
 echo ""
 cat $wrapper
 echo ""
-echo "========================="
+echo "========================"
 
 ###############################################################################
 # Log the modified script
 ###############################################################################
 
-echo "=== CMS config script ==="
+echo "==== CMS config script ===="
 echo ""
 cat $script
 echo ""
-echo "========================="
+echo "==========================="
 
 ###############################################################################
 # Now finally run script!
