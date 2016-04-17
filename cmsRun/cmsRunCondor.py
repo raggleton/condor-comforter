@@ -264,10 +264,8 @@ def get_list_of_files_from_das(dataset, num_files):
     """
     # TODO: use das_client API
     log.info("Querying DAS for dataset info, please be patient...")
-    cmds = ['das_client.py',
-            '--query',
-            'summary dataset=%s' % dataset,
-            '--format=json']
+    cmds = ['das_client.py', '--query',
+            'summary dataset=%s' % dataset, '--format=json']
     output_summary = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
     log.debug(output_summary)
     summary = json.loads(output_summary)
@@ -285,9 +283,7 @@ def get_list_of_files_from_das(dataset, num_files):
     # >= 1 : use that number of files
     num_dataset_files = int(summary['data'][0]['summary'][0]['nfiles'])
     if num_files < 0:
-        # the + 2 here is a fudge factor, to account for certain datasets which
-        # have extra files are duds, so we don't actually get all the files we want
-        num_files = num_dataset_files + 2
+        num_files = num_dataset_files
     elif num_files < 1:
         num_files = math.ceil(num_files * num_dataset_files)
     elif num_files > num_dataset_files:
@@ -297,11 +293,9 @@ def get_list_of_files_from_das(dataset, num_files):
 
     # Make a list of input files for each job to avoid doing it on worker node
     log.info("Querying DAS for %d filenames, please be patient...", num_files)
-    cmds = ['das_client.py',
-            '--query',
-            'file,lumi dataset=%s' % dataset,
-            '--limit=%d' % (num_files),
-            '--format=json']
+    cmds = ['das_client.py', '--query',
+            'file,lumi dataset=%s --status=VALID' % dataset,
+            '--limit=%d' % (num_files), '--format=json']
     log.debug(' '.join(cmds))
     das_output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
     file_dict = json.loads(das_output)
