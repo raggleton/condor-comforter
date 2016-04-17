@@ -19,10 +19,24 @@ Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one datas
 Brief example:
 
 ```
-./cmsRunCondor.py --config pset_tutorial_analysis.py --outputDir /hdfs/user/$LOGNAME/test --dataset /QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/RunIISpring15DR74-AsymptFlat0to50bx25Reco_MCRUN2_74_V9-v3/GEN-SIM-RECO --totalFiles 10 --filesPerJob 5 --dag /storage/$LOGNAME/test/cms.dag --log /storage/$LOGNAME/test
+./cmsRunCondor.py --config pset_tutorial_analysis.py --outputDir /hdfs/user/$LOGNAME/test --dataset /ttHTobb_M125_13TeV_powheg_pythia8/RunIIFall15DR76-25nsPUfixed30NzshcalRaw_76X_mcRun2_asymptotic_v12-v1/AODSIM --totalFiles 10 --filesPerJob 5 --dag /storage/$LOGNAME/test/cms.dag --log /storage/$LOGNAME/test
 ```
 
 You can then monitor job progress with [`DAGstatus.py`](cmsRun/DAGstatus.py).
+
+See all options by doing `cmsRunCondor.py --help`.
+
+Features currently supported:
+
+- Run over all or part (fraction or specific # of files) of a dataset
+
+- Run with a secondary dataset to do "2-file solution" (e.g. mixing RECO with RAW)
+
+- Run with a specified set of files
+
+- Easy monitoring of jobs using [`DAGstatus.py`](cmsRun/DAGstatus.py)
+
+- Profile cmsRun jobs with valgrind or callgrind
 
 ##exampleDAG
 
