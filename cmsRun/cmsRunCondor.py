@@ -537,11 +537,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Create sandbox of user's files
     ###########################################################################
-    # TODO: allow custom files to be added
     sandbox_local = "sandbox.tgz"
+    additional_input_files = args.inputFile or []
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
                                      args.config, filelist_filename,
-                                     args.inputFile)
+                                     additional_input_files)
     # rm local files
     if os.path.isfile(sandbox_local):
         os.remove(sandbox_local)
