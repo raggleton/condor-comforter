@@ -266,7 +266,7 @@ def get_list_of_files_from_das(dataset, num_files):
     log.info("Querying DAS for dataset info, please be patient...")
     cmds = ['das_client.py', '--query',
             'summary dataset=%s' % dataset, '--format=json']
-    output_summary = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+    output_summary = subprocess.check_output(cmds)
     log.debug(output_summary)
     summary = json.loads(output_summary)
 
@@ -297,7 +297,7 @@ def get_list_of_files_from_das(dataset, num_files):
             'file,lumi dataset=%s --status=VALID' % dataset,
             '--limit=%d' % (num_files), '--format=json']
     log.debug(' '.join(cmds))
-    das_output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+    das_output = subprocess.check_output(cmds)
     file_dict = json.loads(das_output)
     try:
         files = [DatasetFile(name=entry['file'][0]['name'], lumi=entry['lumi'][0]['number'])
