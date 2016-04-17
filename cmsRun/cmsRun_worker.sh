@@ -148,6 +148,7 @@ echo "==========================="
 # Now finally run script!
 # TODO: some automated retry system
 ###############################################################################
+reportFile=report${ind}.xml
 if [[ $doCallgrind == 1 ]]; then
     echo "Running with callgrind"
     valgrind --tool=callgrind cmsRun $wrapper
@@ -155,7 +156,7 @@ elif [[ $doValgrind == 1 ]]; then
     echo "Running with valgrind"
     valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all cmsRun $wrapper
 else
-    /usr/bin/time -v cmsRun $wrapper
+    /usr/bin/time -v cmsRun -p $wrapper -j $reportFile
 fi
 cmsResult=$?
 echo "CMS JOB OUTPUT" $cmsResult
@@ -179,6 +180,9 @@ do
         cp $output $outputDir
     fi
 done
+
+# Copy framework report
+hadoop fs -copyFromLocal -f $reportFile ${outputDir///hdfs}/$reportFile
 
 # Copy callgrind output
 for f in $(find . -name "callgrind.out.*")
