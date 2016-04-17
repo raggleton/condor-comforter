@@ -222,9 +222,9 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename, input_fil
             tar.add(root, d, recursive=True)
 
     # add in the config file and input filelist
-    tar.add(config_filename, arcname="config.py")
+    tar.add(config_filename, arcname="src/config.py")
     if input_filelist:
-        tar.add(input_filelist, arcname="filelist.py")
+        tar.add(input_filelist, arcname="src/filelist.py")
 
     # TODO: add in any other files the user wants
 
