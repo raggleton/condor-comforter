@@ -294,7 +294,7 @@ def get_list_of_files_from_das(dataset, num_files):
     # Make a list of input files for each job to avoid doing it on worker node
     log.info("Querying DAS for %d filenames, please be patient...", num_files)
     cmds = ['das_client.py', '--query',
-            'file,lumi dataset=%s --status=VALID' % dataset,
+            'file,lumi dataset=%s status=VALID' % dataset,
             '--limit=%d' % (num_files), '--format=json']
     log.debug(' '.join(cmds))
     das_output = subprocess.check_output(cmds)
