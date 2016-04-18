@@ -384,6 +384,68 @@ def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jo
         dag_file.write("NODE_STATUS_FILE %s 30\n" % status_filename)
 
 
+def check_create_dir(dirname, info_msg=None, debug_msg=None):
+    """Check if directory exists, if not make it."""
+    if info_msg:
+        log.info(info_msg)
+
+    if debug_msg:
+        log.debug(debug_msg)
+
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+
+
+def check_args(args):
+    """Check program arguments.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        ARgs to check
+
+    Raises
+    ------
+    IOError
+        If it cannot find config file or filelist (if one specified)
+    RuntimeError
+        If outputDir not on HDFS, or incorrect --filesPerJob
+
+    """
+    if not os.path.isfile(args.config):
+        raise IOError("Cannot find config file %s" % args.config)
+
+    if args.filelist:
+        args.filelist = os.path.abspath(args.filelist)
+        if not os.path.isfile(args.filelist):
+            raise IOError("Cannot find filelist %s" % args.filelist)
+
+    # for now, restrict output dir to /hdfs
+    if not args.outputDir.startswith('/hdfs'):
+        raise RuntimeError('Output directory (--outputDir) not on /hdfs')
+
+    check_create_dir(args.outputDir,
+                     info_msg="Output directory doesn't exists, "
+                              "making it: %s" % args.outputDir)
+
+    if args.filesPerJob > args.totalFiles and args.totalFiles >= 1:
+        raise RuntimeError ("You can't have filesPerJob > totalFiles!")
+
+    if args.secondaryDataset:
+        log.info("Running 2-file solution with parent dataset %s", args.secondaryDataset)
+
+    # make an output directory for log files
+    check_create_dir(args.log,
+                     info_msg="Log directory doesn't exist, "
+                              "making it: %s" % args.log)
+
+    if args.dag:
+        args.dag = os.path.realpath(args.dag)
+        check_create_dir(os.path.dirname(args.dag),
+                         info_msg="DAG directory doesn't exist, "
+                                  "making it: %s" % os.path.dirname(args.dag))
+
+
 def cmsRunCondor(in_args=sys.argv[1:]):
     """Creates a condor job description file with the correct arguments,
     and optionally submit it.
@@ -392,10 +454,12 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config",
-                        help="CMSSW config file you want to run.")
+                        help="CMSSW config file you want to run.",
+                        required=True)
     parser.add_argument("--outputDir",
                         help="Where you want your output to be stored. "
-                        "/hdfs is recommended")
+                        "Must be on /hdfs.",
+                        required=True)
     parser.add_argument("--dataset",
                         help="Name of dataset you want to run over")
     parser.add_argument("--secondaryDataset",
@@ -454,50 +518,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     log.debug(args)
 
-    ###########################################################################
-    # Do some preliminary checking
-    ###########################################################################
-    if not args.config:
-        raise RuntimeError('You must specify a CMSSW config file')
-
-    if not os.path.isfile(args.config):
-        err_msg = "Cannot find config file %s" % args.config
-        log.error(err_msg)
-        raise IOError(err_msg)
-
-    if args.filelist:
-        args.filelist = os.path.abspath(args.filelist)
-        if not os.path.isfile(args.filelist):
-            raise IOError("Cannot find filelist %s" % args.filelist)
-
-    # for now, restrict output dir to /hdfs
-    if not args.outputDir:
-        raise RuntimeError('You must specify an output directory')
-
-    if not args.outputDir.startswith('/hdfs'):
-        log.error('Output directory not on /hdfs')
-        raise RuntimeError('Output directory not on /hdfs')
-
-    if not os.path.exists(args.outputDir):
-        log.info("Output directory doesn't exists, making it: %s", args.outputDir)
-        try:
-            os.makedirs(args.outputDir)
-        except OSError as e:
-            log.exception("Cannot make output dir %s", args.outputDir)
-
-    if args.filesPerJob > args.totalFiles and args.totalFiles >= 1:
-        log.error("You can't have filesPerJob > totalFiles!")
-        raise RuntimeError
-
-    if args.secondaryDataset:
-        log.info("Running 2-file solution with parent dataset %s", args.secondaryDataset)
-
-    # make an output directory for log files
-    if not os.path.exists(args.log):
-        os.mkdir(args.log)
-
-    if args.dag:
-        args.dag = os.path.realpath(args.dag)
+    check_args(args)
 
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
@@ -555,6 +576,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if not args.outputScript:
         args.outputScript = '%s_%s.condor' % (config_filename.replace(".py", ""),
                                               strftime("%H%M%S"))
+    args.outputScript = os.path.realpath(args.outputScript)
+    check_create_dir(os.path.dirname(args.outputScript),
+                     info_msg="Output condor script directory doesn't exist, "
+                              "making it: %s" % os.path.dirname(args.outputScript))
 
     # Construct args to pass to cmsRun_worker.sh on the worker node
     args_dict = dict(output=args.outputDir,
