@@ -341,8 +341,6 @@ def write_condor_job_file(job_filename, log_dir, args_str, num_jobs):
 
     job = job_template.replace("SEDINITIAL", "")  # don't use initialdir for now
     log_filename = os.path.join(log_dir, os.path.basename(job_filename).replace(".condor", ""))
-    if not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
     log.info('Logs for each job will be written to %s', log_dir)
     job = job.replace("SEDLOG", log_filename)
     job = job.replace("SEDARGS", args_str)
@@ -372,8 +370,6 @@ def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jo
     job_name : str
         Name of job. An index will be added for each job
     """
-    if not os.path.isdir(os.path.dirname(dag_filepath)):
-        os.makedirs(os.path.dirname(dag_filepath))
     log.info("DAG Filename: %s", dag_filepath)
     with open(dag_filepath, "w") as dag_file:
         for job_ind in xrange(total_num_jobs):
