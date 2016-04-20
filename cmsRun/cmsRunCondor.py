@@ -24,7 +24,8 @@ import tarfile
 import argparse
 import subprocess
 from time import strftime
-from itertools import izip_longest
+from itertools import izip_longest, izip
+import FWCore.PythonUtilities.LumiList as LumiList
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -32,31 +33,35 @@ log = logging.getLogger(__name__)
 
 
 class DatasetFile(object):
-    """Hold info about a file in a dataset: filename and the lumisections it covers."""
+    """Hold info about a file in a dataset"""
 
-    def __init__(self, name, lumi):
+    def __init__(self, name, lumi_list):
+        """
+        Parameters
+        ----------
+        name : str
+            Filename
+        lumi_list : LumiList object
+            Info about run numbers/lumisections
+        """
         self.name = name
-        self.lumi = lumi
+        self.lumi_list = lumi_list
         self.parents = []
 
-    def has_lumi(self, ls):
-        """Returns whether this file contains lumisection ls"""
-        for lr in self.lumi:
-            if lr[0] <= ls <= lr[1]:
-                return True
-        return False
-
     def __repr__(self):
-        return 'DatasetFile(name={name:s}, lumi={lumi:s}, parents={parents:s})'.format(**self.__dict__)
+        return ('DatasetFile(name={name:s}, lumi_list={lumi_list:s}, '
+                'parents={parents:s})'.format(**self.__dict__))
 
 
-def find_matching_ls_range(raw_files, ls_range):
+def find_matching_run_ls_range(raw_files, run, ls_range):
     """Find all files that have lumisections that fully cover ls_range.
 
     Parameters
     ----------
     raw_files : list[DatasetFile]
         List of files to match against.
+    run : int
+        Run number
     ls_range : list[int, int]
         Edges of lumisection range to match, e.g. [610, 621]
 
@@ -67,25 +72,24 @@ def find_matching_ls_range(raw_files, ls_range):
     """
     matching_files = []
     for ls in xrange(ls_range[0], ls_range[1] + 1):
-        matching_files.extend([f for f in raw_files if f.has_lumi(ls)])
+        matching_files.extend([f for f in raw_files if f.lumi_list.contains(run=run, lumiSection=ls)])
     return list(set(matching_files))
 
 
-def find_matching_files(raw_files, ls_ranges):
-    """Find all files in raw_files that cover all lumisections in ls_ranges
+def find_matching_files(raw_files, lumi_list):
+    """Find all files in raw_files that cover all runs/lumisections in lumi_list
 
     Parameters
     ----------
     raw_files : list[DatasetFile]
         List of files to match against.
-    ls_range : list[list[int, int]]
-        List of edges of lumisection ranges to match,
-        e.g. [[610, 621], [701, 711]]
+    lumi_list : LumiList.LumiList
+        LumiList holding {run: lumisections}
 
     Returns
     -------
     list[DatasetFile]
-        List of unique DatasetFiles that cover ls_ranges.
+        List of unique DatasetFiles that cover lumi_list.
 
     Raises
     ------
@@ -93,15 +97,16 @@ def find_matching_files(raw_files, ls_ranges):
         If no files in `raw_files` match the lumisection.
     """
     matching_files = []
-    for lsr in ls_ranges:
-        res = find_matching_ls_range(raw_files, lsr)
-        if not res:
-            print lsr
-            print len(raw_files)
-            for rf in raw_files:
-                print rf
-            raise RuntimeError('No matching RAW file for this LS %s' % lsr)
-        matching_files.extend(res)
+    for run, lumis in lumi_list.compactList.iteritems():
+        for lsr in lumis:
+            res = find_matching_run_ls_range(raw_files, run, lsr)
+            if not res:
+                print lsr
+                print len(raw_files)
+                for rf in raw_files:
+                    print rf
+                raise RuntimeError('No matching RAW file for this LS %s' % lsr)
+            matching_files.extend(res)
     return list(set(matching_files))
 
 
@@ -251,6 +256,16 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename,
     return sandbox_location
 
 
+def das_file_to_lumilist(data):
+    """Extract LumiList object from DAS file entry"""
+    lumi_dict = {}
+    for rn, lumi in izip(data['run'], data['lumi']):
+        run_num = str(rn['run_number'])
+        lumis = lumi['number']
+        lumi_dict[run_num] = lumis
+    return LumiList.LumiList(compactList=lumi_dict)
+
+
 def get_list_of_files_from_das(dataset, num_files):
     """Create list of num_files filenames for dataset using DAS.
 
@@ -304,13 +319,13 @@ def get_list_of_files_from_das(dataset, num_files):
     # Make a list of input files for each job to avoid doing it on worker node
     log.info("Querying DAS for %d filenames, please be patient...", num_files)
     cmds = ['das_client.py', '--query',
-            'file,lumi dataset=%s status=VALID' % dataset,
+            'file,run,lumi dataset=%s status=VALID' % dataset,
             '--limit=%d' % (num_files), '--format=json']
     log.debug(' '.join(cmds))
     das_output = subprocess.check_output(cmds)
     file_dict = json.loads(das_output)
     try:
-        files = [DatasetFile(name=entry['file'][0]['name'], lumi=entry['lumi'][0]['number'])
+        files = [DatasetFile(name=entry['file'][0]['name'], lumi_list=das_file_to_lumilist(entry))
                  for entry in file_dict['data']]
     except KeyError as e:
         print file_dict
@@ -541,7 +556,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 list_of_secondary_files = get_list_of_files_from_das(args.secondaryDataset, -1)
                 # do lumisection matching between primary and secondary datasets
                 for f in list_of_files:
-                    f.parents = find_matching_files(list_of_secondary_files, f.lumi)
+                    f.parents = find_matching_files(list_of_secondary_files, f.lumi_list)
 
         # figure out job grouping
         job_files = group_files_by_files_per_job(list_of_files, args.filesPerJob)
