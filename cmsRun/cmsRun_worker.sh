@@ -28,7 +28,9 @@ sandbox="" # sandbox location
 doProfile=0 # run in profiling mode - use whatever files specified in config, don't override
 doCallgrind=0  # do profiling - runs with callgrind
 doValgrind=0  # do memcheck - runs with valgrind
-while getopts ":s:f:o:i:a:c:S:p;m" opt; do
+lumiMaskSrc=""  # filename or URL for lumi mask
+lumiMaskType="filename"  # source type (filename or url)
+while getopts ":s:f:o:i:a:c:S:p:m:l:" opt; do
     case $opt in
         \?)
             echo "Invalid option $OPTARG" >&2
@@ -76,6 +78,16 @@ while getopts ":s:f:o:i:a:c:S:p;m" opt; do
             doValgrind=1
             doProfile=1
             ;;
+        l)
+            lumiMaskSrc=$OPTARG
+            urlRegex="^(https?|www)"
+            if [[ "$lumiMaskSrc" =~ $urlRegex ]]; then
+                lumiMaskSrc="url"
+            fi
+            if [ ! -z $lumiMaskSrc ]; then
+                echo "Running with lumiMask $lumiMaskType $lumiMaskSrc"
+            fi
+            ;;
     esac
 done
 
@@ -114,6 +126,7 @@ wrapper="wrapper.py"
 
 echo "import FWCore.ParameterSet.Config as cms" >> $wrapper
 echo "import "${script%.py}" as myscript" >> $wrapper
+echo "import FWCore.PythonUtilities.LumiList as LumiList" >> $wrapper
 echo "process = myscript.process" >> $wrapper
 # if we're profiling then don't override the input files
 if [ $doProfile == 0 ]; then
@@ -121,6 +134,9 @@ if [ $doProfile == 0 ]; then
     echo "process.source.fileNames = cms.untracked.vstring(filelist.fileNames[$ind])" >> $wrapper
     echo "process.source.secondaryFileNames = cms.untracked.vstring(filelist.secondaryFileNames[$ind])" >> $wrapper
     echo "process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))" >> $wrapper
+    if [ ! -z "$lumiMaskSrc" ]; then
+        echo "process.source.lumisToProcess = LumiList.LumiList(${lumiMaskType}='${lumiMaskSrc}').getVLuminosityBlockRange()" >> $wrapper
+    fi
 fi
 echo "if hasattr(process, 'TFileService'): process.TFileService.fileName = "\
 "cms.string(process.TFileService.fileName.value().replace('.root', '_${ind}.root'))" >> $wrapper

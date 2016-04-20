@@ -143,7 +143,10 @@ def filter_by_run_lumisection(list_of_files, lumi_list):
     list[DatasetFile]
         List of files that have run:LS in lumi_list
     """
-    return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
+    if lumi_list is None:
+        return list_of_files
+    else:
+        return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
 
 
 def group_files_by_lumis_per_job(list_of_files, lumis_per_job):
@@ -479,6 +482,15 @@ def check_args(args):
                          info_msg="DAG directory doesn't exist, "
                                   "making it: %s" % os.path.dirname(args.dag))
 
+    if args.lumiMask and not is_url(args.lumiMask):
+        args.lumiMask = os.path.abspath(args.lumiMask)
+
+
+def is_url(path):
+    """Test if path is URL or not"""
+    # this is a pretty crap test, can do better?
+    return path.startswith('http') or path.startswith('www')
+
 
 def setup_lumi_mask(lumi_mask_source):
     """Produce LumiList.LumiList from lumi_mask_source.
@@ -493,8 +505,7 @@ def setup_lumi_mask(lumi_mask_source):
     LumiList.LumiList
         LumiList object, with {run : [lumisections]} info
     """
-    # this is a pretty crap test, can do better?
-    if lumi_mask_source.startswith('http') or lumi_mask_source.startswith('www'):
+    if is_url(lumi_mask_source):
         return LumiList.LumiList(url=lumi_mask_source)
     else:
         # leave file existence to LumiList
@@ -624,6 +635,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     sandbox_local = "sandbox.tgz"
     additional_input_files = args.inputFile or []
+    if args.lumiMask and not is_url(args.lumiMask):
+        additional_input_files.append(args.lumiMask)
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
                                      args.config, filelist_filename,
                                      additional_input_files)
@@ -651,6 +664,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                      sandbox=sandbox_location)
     args_str = "-o {output} -i $({ind}) -a $ENV(SCRAM_ARCH) " \
                "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
+    if args.lumiMask:
+        if is_url(args.lumiMask):
+            args_str += ' -l ' + args.lumiMask
+        else:
+            args_str += ' -l ' + os.path.basename(args.lumiMask)
     if args.valgrind:
         args_str += ' -m'
     if args.callgrind:
