@@ -128,6 +128,29 @@ def grouper(iterable, n, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 
+def filter_by_run_lumisection(list_of_files, lumi_list):
+    """Filter list of files by run number and optionally lumisection.
+
+    Parameters
+    ----------
+    list_of_files : lit[DatasetFile]
+        List of DatasetFiles to be filtered
+    lumi_list : LumiList.LumiList
+        LumiList of {run:[lumisections]} to filter against.
+
+    Returns
+    -------
+    list[DatasetFile]
+        List of files that have run:LS in lumi_list
+    """
+    return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
+
+
+def group_files_by_lumis_per_job(list_of_files, lumis_per_job):
+    """Makes groups of files, splitting based on lumis_per_job."""
+    pass
+
+
 def group_files_by_files_per_job(list_of_files, files_per_job):
     """Makes groups of files, splitting into groups of files_per_job.
 
@@ -457,6 +480,27 @@ def check_args(args):
                                   "making it: %s" % os.path.dirname(args.dag))
 
 
+def setup_lumi_mask(lumi_mask_source):
+    """Produce LumiList.LumiList from lumi_mask_source.
+
+    Parameters
+    ----------
+    lumi_mask_source : str
+        File or URL of lumi mask JSON to be interpreted.
+
+    Returns
+    -------
+    LumiList.LumiList
+        LumiList object, with {run : [lumisections]} info
+    """
+    # this is a pretty crap test, can do better?
+    if lumi_mask_source.startswith('http') or lumi_mask_source.startswith('www'):
+        return LumiList.LumiList(url=lumi_mask_source)
+    else:
+        # leave file existence to LumiList
+        return LumiList.LumiList(filename=lumi_mask_source)
+
+
 def cmsRunCondor(in_args=sys.argv[1:]):
     """Creates a condor job description file with the correct arguments,
     and optionally submit it.
@@ -510,6 +554,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     parser.add_argument('--inputFile',
                         help="Additional input file(s) needed by cmsRun.",
                         action='append')
+    parser.add_argument('--lumiMask',
+                        help='Specify file or URL with {run:lumisections} to run over')
+    # parser.add_argument('--runRange',
+                        # help='Specify run number(s) to run over')
     parser.add_argument('--callgrind',
                         help='Run using callgrind. Note that in this mode, '
                         'it will use the files and # evts in the config. '
@@ -531,6 +579,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     check_args(args)
 
+    lumi_mask = setup_lumi_mask(args.lumiMask) if args.lumiMask else None
+
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
     # but only if we're not profiling
@@ -538,6 +588,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # placehold vars
     total_num_jobs = 1
     filelist_filename = None
+
+    # This could probably be done better!
 
     if not args.valgrind and not args.callgrind:
         list_of_files, list_of_secondary_files = None, None
@@ -549,9 +601,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 list_of_files = [line.strip() for line in flist if line.strip()]
             filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
         else:
+            filelist_filename = generate_filelist_filename(args.dataset[1:])
             # Get list of files from DAS
             list_of_files = get_list_of_files_from_das(args.dataset, args.totalFiles)
-            filelist_filename = generate_filelist_filename(args.dataset[1:])
+            list_of_files = filter_by_run_lumisection(list_of_files, lumi_mask)
             if args.secondaryDataset:
                 list_of_secondary_files = get_list_of_files_from_das(args.secondaryDataset, -1)
                 # do lumisection matching between primary and secondary datasets
