@@ -449,7 +449,7 @@ def check_args(args):
     IOError
         If it cannot find config file or filelist (if one specified)
     RuntimeError
-        If outputDir not on HDFS, or incorrect --filesPerJob
+        If outputDir not on HDFS, or incorrect --unitsPerJob
 
     """
     if not os.path.isfile(args.config):
@@ -468,8 +468,8 @@ def check_args(args):
                      info_msg="Output directory doesn't exists, "
                               "making it: %s" % args.outputDir)
 
-    if args.filesPerJob > args.totalFiles and args.totalFiles >= 1:
-        raise RuntimeError ("You can't have filesPerJob > totalFiles!")
+    if args.unitsPerJob > args.totalUnits and args.totalUnits >= 1:
+        raise RuntimeError("You can't have unitsPerJob > totalUnits!")
 
     if args.secondaryDataset:
         log.info("Running 2-file solution with parent dataset %s", args.secondaryDataset)
@@ -562,15 +562,22 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     parser.add_argument("--secondaryDataset",
                         help="Name of secondary dataset. This allows you to do the "
                         "'2-file' solution, e.g.to run both RAW and RECO in the "
-                        "same job. The --filesPerJob and --totalFiles options "
+                        "same job. The --unitsPerJob and --totalUnits options "
                         "will then apply to the child dataset (specified with --dataset)")
-    parser.add_argument("--filesPerJob",
-                        help="Number of files to run over, per job.",
-                        type=int, default=5)
-    parser.add_argument("--totalFiles",
-                        help="Total number of files to run over. "
+    split_group = parser.add_mutually_exclusive_group(required=True)
+    split_group.add_argument("--splitByFiles",
+                             help='Unit = file',
+                             action='store_true')
+    split_group.add_argument("--splitByLumis",
+                             help='Unit = lumisection',
+                             action='store_true')
+    parser.add_argument("--unitsPerJob",
+                        help="Number of units to run over per job.",
+                        type=int, required=True)
+    parser.add_argument("--totalUnits",
+                        help="Total number of units to run over. "
                         "Default is ALL (-1). Also acceptable is a fraction of "
-                        "the whole dataset (0-1), or an integer number of files.",
+                        "the whole dataset (0-1), or an integer number of files (>=1).",
                         type=float, default=-1)
     parser.add_argument("--filelist",
                         help="Pass in a list of filenames to run over. "
@@ -605,13 +612,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     parser.add_argument('--callgrind',
                         help='Run using callgrind. Note that in this mode, '
                         'it will use the files and # evts in the config. '
-                        'You do not need to specify --filesPerJob, --totalFiles, or --dataset. '
+                        'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
                         'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
                         action='store_true')
     parser.add_argument('--valgrind',
                         help='Run using valgrind to find mem leaks. Note that in this mode, '
                         'it will use the files and # evts in the config. '
-                        'You do not need to specify --filesPerJob, --totalFiles, or --dataset. '
+                        'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
                         'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
                         action='store_true')
     args = parser.parse_args(args=in_args)
@@ -651,7 +658,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         else:
             filelist_filename = generate_filelist_filename(args.dataset[1:])
             # Get list of files from DAS
-            list_of_files = get_list_of_files_from_das(args.dataset, args.totalFiles)
+            list_of_files = get_list_of_files_from_das(args.dataset, args.totalUnits)
             list_of_files = filter_by_run_lumisection(list_of_files, lumi_mask)
             if args.secondaryDataset:
                 list_of_secondary_files = get_list_of_files_from_das(args.secondaryDataset, -1)
@@ -660,12 +667,18 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                     f.parents = find_matching_files(list_of_secondary_files, f.lumi_list)
 
         # figure out job grouping
-        job_files = group_files_by_files_per_job(list_of_files, args.filesPerJob)
-        total_num_jobs = len(job_files)
-        create_filelist(job_files, args.filesPerJob, filelist_filename)
+        if args.splitByFiles:
+            job_files = group_files_by_files_per_job(list_of_files, args.unitsPerJob)
+            total_num_jobs = len(job_files)
+            create_filelist(job_files, args.unitsPerJob, filelist_filename)
+        elif args.splitByLumis:
+            pass
+            # job_files, job_lumis = group_files_by_lumis_per_job(list_of_files, args.unitsPerJob)
+            # total_num_jobs = len(job_files)
+            # create_filelist(job_files, args.unitsPerJob, filelist_filename)
 
     log.debug("Will be submitting %d jobs, running over %d files",
-              total_num_jobs, args.totalFiles)
+              total_num_jobs, args.totalUnits)
 
     ###########################################################################
     # Create sandbox of user's files
@@ -747,8 +760,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     return dict(dataset=args.dataset,
                 jobFile=args.outputScript,
                 totalNumJobs=total_num_jobs,
-                totaNumFiles=args.totalFiles,
-                filesPerJob=args.filesPerJob,
+                totaNumFiles=args.totalUnits,
+                unitsPerJob=args.unitsPerJob,
                 fileList=filelist_filename,
                 config=args.config,
                 condorScript=args.outputScript
