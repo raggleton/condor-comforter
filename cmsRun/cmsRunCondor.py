@@ -3,14 +3,11 @@
 """
 Script to allow you to run cmsRun jobs on HTCondor.
 
-Bit rudimentary. See options with:
+See options with:
 
-cmsRunCondor.py --help
+    cmsRunCondor.py --help
 
-Note that it automatically sets the correct input files, providing you give it a
-dataset and specify filesPerJob, and totalFiles.
-
-Robin Aggleton 2015, in a rush
+Robin Aggleton 201[5|6]
 """
 
 
@@ -30,6 +27,12 @@ import FWCore.PythonUtilities.LumiList as LumiList
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
+
+
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                      argparse.RawDescriptionHelpFormatter):
+    """For better argparse output"""
+    pass
 
 
 class DatasetFile(object):
@@ -545,7 +548,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     Returns a dict of information about the job.
     """
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=CustomFormatter)
     parser.add_argument("--config",
                         help="CMSSW config file you want to run.",
                         required=True)
