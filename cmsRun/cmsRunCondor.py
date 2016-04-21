@@ -512,6 +512,33 @@ def setup_lumi_mask(lumi_mask_source):
         return LumiList.LumiList(filename=lumi_mask_source)
 
 
+def parse_run_range(range_str):
+    """Parse run range string, result list of run numbers
+
+    range_str can have individual runs, or ranges. They can also be combined,
+    but must be separated by a comma.
+
+    e.g.
+    "234567,234568" -> [234567, 234568]
+    "234567-234569" -> [234567, 234568, 234569]
+    "234567,234569-234570" -> [234567, 234569, 234570]
+    """
+    if range_str == '':
+        return []
+    if range_str is None:
+        return None
+
+    run_list = []
+    for entry in range_str.split(','):
+        entry = entry.strip()
+        if '-' in entry:
+            start, end = entry.split('-')
+            run_list.extend(range(int(start), int(end) + 1))
+        else:
+            run_list.append(int(entry))
+    return run_list
+
+
 def cmsRunCondor(in_args=sys.argv[1:]):
     """Creates a condor job description file with the correct arguments,
     and optionally submit it.
@@ -567,8 +594,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         action='append')
     parser.add_argument('--lumiMask',
                         help='Specify file or URL with {run:lumisections} to run over')
-    # parser.add_argument('--runRange',
-                        # help='Specify run number(s) to run over')
+    parser.add_argument('--runRange',
+                        help='Specify run number(s) to run over. List, or range '
+                        '(or combine). Must be comma separated. '
+                        'e.g. 259700,269710-259720')
     parser.add_argument('--callgrind',
                         help='Run using callgrind. Note that in this mode, '
                         'it will use the files and # evts in the config. '
@@ -590,7 +619,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     check_args(args)
 
+    # Why not just use args.lumiMask to hold result?
+    run_list = parse_run_range(args.runRange) if args.runRange else None
     lumi_mask = setup_lumi_mask(args.lumiMask) if args.lumiMask else None
+    if run_list:
+        lumi_mask.selectRuns(run_list)
 
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
