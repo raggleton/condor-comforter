@@ -120,6 +120,13 @@ def generate_filelist_filename(dataset):
     return "fileList_%s.py" % dset_uscore
 
 
+def generate_lumilist_filename(dataset):
+    """Generate a lumilist filename from a dataset name."""
+    dset_uscore = dataset[1:]
+    dset_uscore = dset_uscore.replace("/", "_").replace("-", "_")
+    return "lumiList_%s.py" % dset_uscore
+
+
 def grouper(iterable, n, fillvalue=None):
     """
     Iterate through iterable in groups of size n.
@@ -131,30 +138,56 @@ def grouper(iterable, n, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 
-def filter_by_run_lumisection(list_of_files, lumi_list):
-    """Filter list of files by run number and optionally lumisection.
+def filter_by_lumi_list(list_of_files, lumi_mask):
+    """Filter list of files by run number and lumisection.
 
     Parameters
     ----------
     list_of_files : lit[DatasetFile]
         List of DatasetFiles to be filtered
-    lumi_list : LumiList.LumiList
+    lumi_mask : LumiList.LumiList or None
         LumiList of {run:[lumisections]} to filter against.
 
     Returns
     -------
     list[DatasetFile]
-        List of files that have run:LS in lumi_list
+        List of files that have run:LS in lumi_mask
     """
-    if lumi_list is None:
+    if lumi_mask is None:
         return list_of_files
     else:
-        return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
+        filtered = []
+        for f in list_of_files:
+            overlap = f.lumi_list & lumi_mask
+            if len(overlap) > 0:
+                f.lumi_list = overlap
+                filtered.append(f)
+        return filtered
+        # return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
 
 
-def group_files_by_lumis_per_job(list_of_files, lumis_per_job):
-    """Makes groups of files, splitting based on lumis_per_job."""
-    pass
+def group_files_by_lumis_per_job(list_of_lumis, lumis_per_job):
+    """Makes groups of files, splitting based on lumis_per_job.
+
+    Parameters
+    ----------
+    list_of_lumis : {(run, LS) : DatasetFile}
+        List of run/LS wiht corresponding file
+    lumis_per_job : int
+        Number of LS per job
+
+    Returns
+    -------
+    list[list[DatasetFile]], list[LumiList]
+        List of list of files for each job, and list of LumiList obj for each job
+    """
+    group_files, group_lumis = [], []
+    for keylist in grouper(list_of_lumis.keys(), lumis_per_job):
+        group_keys = filter(None, list(keylist))
+        group_lumis.append(LumiList.LumiList(lumis=group_keys))
+        group_f = set([list_of_lumis[k] for k in group_keys])
+        group_files.append(group_f)
+    return group_files, group_lumis
 
 
 def group_files_by_files_per_job(list_of_files, files_per_job):
@@ -179,17 +212,14 @@ def group_files_by_files_per_job(list_of_files, files_per_job):
     return groups
 
 
-def create_filelist(jobs_input_files, files_per_job, filelist_filename):
+def create_filelist(jobs_input_files, filelist_filename):
     """Write python dict to file with input files for each job.
     It can then be used in worker script to override the PoolSource.
-    Each job will have files_per_job input files.
 
     Parameters
     ----------
     jobs_input_files : list[list[DatasetFile]]
         List of input files for each cmsRun job.
-    files_per_job : int
-        Number of files to process per job
     filelist_filename : str
         Filename to write python dict to.
     """
@@ -208,6 +238,27 @@ def create_filelist(jobs_input_files, files_per_job, filelist_filename):
         file_list.write("}\n")
 
     log.info("List of files for each jobs written to %s", filelist_filename)
+
+
+def create_lumilists(jobs_lumis, lumilist_filename):
+    """Write python dict to file with lumis for each job.
+    It can then be used in worker script to override the PoolSource.
+
+    Parameters
+    ----------
+    jobs_lumis : list[LumiList]
+        List of LumiList objects, one for each job.
+    lumilist_filename : str
+        Filename to write python dict to.
+    """
+    with open(lumilist_filename, "w") as file_lumis:
+        file_lumis.write("import FWCore.ParameterSet.Config as cms\n")
+        file_lumis.write("import FWCore.PythonUtilities.LumiList as LumiList\n")
+        file_lumis.write("lumis = {")
+        for n, lumi_list in enumerate(jobs_lumis):
+            file_lumis.write("%d: %s, \n" % (n, lumi_list.getVLuminosityBlockRange()))
+        file_lumis.write("}\n")
+    log.info("List of lumis for each job written to %s", lumilist_filename)
 
 
 def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename,
@@ -472,7 +523,9 @@ def check_args(args):
         raise RuntimeError("You can't have unitsPerJob > totalUnits!")
 
     if args.secondaryDataset:
-        log.info("Running 2-file solution with parent dataset %s", args.secondaryDataset)
+        if not args.dataset:
+            raise RuntimeError('--secondaryDataset requires --dataset to be specified')
+        log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
 
     # make an output directory for log files
     check_create_dir(args.log,
@@ -642,12 +695,13 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # placehold vars
     total_num_jobs = 1
-    filelist_filename = None
+    filelist_filename, lumilist_filename = None, None
 
     # This could probably be done better!
 
     if not args.valgrind and not args.callgrind:
         list_of_files, list_of_secondary_files = None, None
+        list_of_lumis = None
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
         if args.filelist:
@@ -656,10 +710,16 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 list_of_files = [line.strip() for line in flist if line.strip()]
             filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
         else:
-            filelist_filename = generate_filelist_filename(args.dataset[1:])
-            # Get list of files from DAS
-            list_of_files = get_list_of_files_from_das(args.dataset, args.totalUnits)
-            list_of_files = filter_by_run_lumisection(list_of_files, lumi_mask)
+            filelist_filename = generate_filelist_filename(args.dataset)
+            lumilist_filename = generate_lumilist_filename(args.dataset)
+            # Get list of files from DAS, also store corresponding lumis
+            n_files = args.totalUnits if args.splitByFiles else -1
+            list_of_files = get_list_of_files_from_das(args.dataset, n_files)
+            log.debug("Pre lumi filter")
+            log.debug(list_of_files)
+            list_of_files = filter_by_lumi_list(list_of_files, lumi_mask)
+            log.debug("After lumi filter")
+            log.debug(list_of_files)
             if args.secondaryDataset:
                 list_of_secondary_files = get_list_of_files_from_das(args.secondaryDataset, -1)
                 # do lumisection matching between primary and secondary datasets
@@ -670,12 +730,29 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if args.splitByFiles:
             job_files = group_files_by_files_per_job(list_of_files, args.unitsPerJob)
             total_num_jobs = len(job_files)
-            create_filelist(job_files, args.unitsPerJob, filelist_filename)
+            create_filelist(job_files, filelist_filename)
+            create_lumilists([f.lumi_list for f in job_files], lumilist_filename)
         elif args.splitByLumis:
-            pass
-            # job_files, job_lumis = group_files_by_lumis_per_job(list_of_files, args.unitsPerJob)
-            # total_num_jobs = len(job_files)
-            # create_filelist(job_files, args.unitsPerJob, filelist_filename)
+            if args.filelist:
+                raise RuntimeError('Cannot split by lumi with --filelist')
+            # need to keep track of which files correspond with which lumi
+            # this holds a map of {(run:LS) : DatasetFile}
+            list_of_lumis = {}
+            for f in list_of_files:
+                for x in f.lumi_list.getLumis():
+                    list_of_lumis[x] = f
+            # choose the required number of lumis
+            if 0 < args.totalUnits < 1:
+                end = int(math.ceil(len(list_of_lumis) * args.totalUnits))
+                list_of_lumis = {k:list_of_lumis[k] for k in list_of_lumis.keys()[0:end + 1]}
+            elif args.totalUnits >= 1:
+                list_of_lumis = {k:list_of_lumis[k] for k in list_of_lumis.keys()[0:int(args.totalUnits)]}
+
+            # do job grouping
+            job_files, job_lumis = group_files_by_lumis_per_job(list_of_lumis, args.unitsPerJob)
+            total_num_jobs = len(job_files)
+            create_filelist(job_files, filelist_filename)
+            create_lumilists(job_lumis, lumilist_filename)
 
     log.debug("Will be submitting %d jobs, running over %d files",
               total_num_jobs, args.totalUnits)
@@ -686,15 +763,18 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     sandbox_local = "sandbox.tgz"
     additional_input_files = args.inputFile or []
     if args.lumiMask and not is_url(args.lumiMask):
-        additional_input_files.append(args.lumiMask)
+        additional_input_files.append(lumilist_filename)
+
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
                                      args.config, filelist_filename,
                                      additional_input_files)
     # rm local files
     if os.path.isfile(sandbox_local):
         os.remove(sandbox_local)
-    if os.path.isfile(filelist_filename):
-        os.remove(filelist_filename)
+    # if os.path.isfile(filelist_filename):
+    #     os.remove(filelist_filename)
+    # if os.path.isfile(lumilist_filename):
+    #     os.remove(lumilist_filename)
 
     ###########################################################################
     # Make a condor submission script
@@ -718,7 +798,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if is_url(args.lumiMask):
             args_str += ' -l ' + args.lumiMask
         else:
-            args_str += ' -l ' + os.path.basename(args.lumiMask)
+            args_str += ' -l ' + os.path.basename(lumilist_filename)
     if args.valgrind:
         args_str += ' -m'
     if args.callgrind:

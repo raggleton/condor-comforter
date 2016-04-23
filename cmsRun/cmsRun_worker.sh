@@ -82,7 +82,7 @@ while getopts ":s:f:o:i:a:c:S:p:m:l:" opt; do
             lumiMaskSrc=$OPTARG
             urlRegex="^(https?|www)"
             if [[ "$lumiMaskSrc" =~ $urlRegex ]]; then
-                lumiMaskSrc="url"
+                lumiMaskType="url"
             fi
             if [ ! -z $lumiMaskSrc ]; then
                 echo "Running with lumiMask $lumiMaskType $lumiMaskSrc"
@@ -135,7 +135,13 @@ if [ $doProfile == 0 ]; then
     echo "process.source.secondaryFileNames = cms.untracked.vstring(filelist.secondaryFileNames[$ind])" >> $wrapper
     echo "process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))" >> $wrapper
     if [ ! -z "$lumiMaskSrc" ]; then
-        echo "process.source.lumisToProcess = LumiList.LumiList(${lumiMaskType}='${lumiMaskSrc}').getVLuminosityBlockRange()" >> $wrapper
+        # shoudl we choose type for local file if .py or .json?
+        if [ "$lumiMaskType" ==  "filename" ]; then
+            echo "import ${lumiMaskSrc%.py} as lumilist" >> $wrapper
+            echo "process.source.lumisToProcess = lumilist.lumis[$ind]" >> $wrapper
+        elif [ "$lumiMaskType" == "url" ]; then
+            echo "process.source.lumisToProcess = LumiList.LumiList(${lumiMaskType}='${lumiMaskSrc}').getVLuminosityBlockRange()" >> $wrapper
+        fi
     fi
 fi
 echo "if hasattr(process, 'TFileService'): process.TFileService.fileName = "\
