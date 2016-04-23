@@ -477,13 +477,11 @@ def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jo
 
 def check_create_dir(dirname, info_msg=None, debug_msg=None):
     """Check if directory exists, if not make it."""
-    if info_msg:
-        log.info(info_msg)
-
-    if debug_msg:
-        log.debug(debug_msg)
-
     if not os.path.isdir(dirname):
+        if info_msg:
+            log.info(info_msg)
+        if debug_msg:
+            log.debug(debug_msg)
         os.makedirs(dirname)
 
 
@@ -493,7 +491,7 @@ def check_args(args):
     Parameters
     ----------
     args : argparse.Namespace
-        ARgs to check
+        Args to check
 
     Raises
     ------
@@ -507,6 +505,9 @@ def check_args(args):
         raise IOError("Cannot find config file %s" % args.config)
 
     if args.filelist:
+        if args.dataset:
+            raise RuntimeError("Cannot use both --filelist and --dataset")
+
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
