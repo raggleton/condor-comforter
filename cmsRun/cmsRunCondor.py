@@ -819,10 +819,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # rm local files
     if os.path.isfile(sandbox_local):
         os.remove(sandbox_local)
-    # if os.path.isfile(filelist_filename):
-    #     os.remove(filelist_filename)
-    # if os.path.isfile(lumilist_filename):
-    #     os.remove(lumilist_filename)
+    if os.path.isfile(filelist_filename):
+        os.remove(filelist_filename)
+    if os.path.isfile(lumilist_filename):
+        os.remove(lumilist_filename)
 
     ###########################################################################
     # Make a condor submission script
