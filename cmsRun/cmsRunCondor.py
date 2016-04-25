@@ -21,7 +21,7 @@ import tarfile
 import argparse
 import subprocess
 from time import strftime
-from itertools import izip_longest, izip
+from itertools import izip_longest, izip, product
 import FWCore.PythonUtilities.LumiList as LumiList
 
 
