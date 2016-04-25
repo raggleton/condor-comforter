@@ -12,6 +12,8 @@
 # - moves the output to /hdfs
 ###############################################################################
 
+echo "START: $(date)"
+
 worker=$PWD # top level of worker node
 export HOME=$worker # need this if getenv = false
 
@@ -217,5 +219,7 @@ do
         cp $output $outputDir
     fi
 done
+
+echo "END: $(date)"
 
 exit $?
