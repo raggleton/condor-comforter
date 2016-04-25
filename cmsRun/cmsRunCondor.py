@@ -784,8 +784,6 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             create_filelist(job_files, filelist_filename)
             create_lumilists([f.lumi_list for f in job_files], lumilist_filename)
         elif args.splitByLumis:
-            if args.filelist:
-                raise RuntimeError('Cannot split by lumi with --filelist')
             # need to keep track of which files correspond with which lumi
             # this holds a map of {(run:LS) : DatasetFile}
             list_of_lumis = {}
@@ -812,7 +810,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     sandbox_local = "sandbox.tgz"
     additional_input_files = args.inputFile or []
-    if args.lumiMask and not is_url(args.lumiMask):
+    if os.path.isfile(lumilist_filename):
         additional_input_files.append(lumilist_filename)
 
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
@@ -844,11 +842,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                      sandbox=sandbox_location)
     args_str = "-o {output} -i $({ind}) -a $ENV(SCRAM_ARCH) " \
                "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
-    if args.lumiMask:
-        if is_url(args.lumiMask):
-            args_str += ' -l ' + args.lumiMask
-        else:
+    if args.lumiMask or args.runRange:
+        if lumilist_filename:
             args_str += ' -l ' + os.path.basename(lumilist_filename)
+        elif is_url(args.lumiMask):
+            args_str += ' -l ' + args.lumiMask
     if args.valgrind:
         args_str += ' -m'
     if args.callgrind:
