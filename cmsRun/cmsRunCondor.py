@@ -653,7 +653,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                              action='store_true')
     parser.add_argument("--unitsPerJob",
                         help="Number of units to run over per job.",
-                        type=int, required=True)
+                        type=int)
     parser.add_argument("--totalUnits",
                         help="Total number of units to run over. "
                         "Default is ALL (-1). Also acceptable is a fraction of "
@@ -731,6 +731,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         list_of_lumis = None
         if not args.filelist and not args.dataset:
             raise RuntimeError('You must specify a dataset or a filelist')
+        if args.unitsPerJob is None:
+            raise RuntimeError('You must specify an integer number of --unitsPerJob')
+
         if args.filelist:
             # Get files from user's file
             with open(args.filelist) as flist:
