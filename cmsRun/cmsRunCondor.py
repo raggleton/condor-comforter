@@ -141,6 +141,8 @@ def grouper(iterable, n, fillvalue=None):
 def filter_by_lumi_list(list_of_files, lumi_mask):
     """Filter list of files by run number and lumisection.
 
+    Modifies each DatasetFile's LumiList to only the run:LS passing lumi mask.
+
     Parameters
     ----------
     list_of_files : lit[DatasetFile]
@@ -172,7 +174,7 @@ def group_files_by_lumis_per_job(list_of_lumis, lumis_per_job):
     Parameters
     ----------
     list_of_lumis : {(run, LS) : DatasetFile}
-        List of run/LS wiht corresponding file
+        List of run/LS with corresponding file
     lumis_per_job : int
         Number of LS per job
 
@@ -253,7 +255,6 @@ def create_lumilists(jobs_lumis, lumilist_filename):
     """
     with open(lumilist_filename, "w") as file_lumis:
         file_lumis.write("import FWCore.ParameterSet.Config as cms\n")
-        file_lumis.write("import FWCore.PythonUtilities.LumiList as LumiList\n")
         file_lumis.write("lumis = {")
         for n, lumi_list in enumerate(jobs_lumis):
             file_lumis.write("%d: %s, \n" % (n, lumi_list.getVLuminosityBlockRange()))
