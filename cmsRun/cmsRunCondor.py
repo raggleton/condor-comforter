@@ -164,6 +164,27 @@ def filter_by_lumi_list(list_of_files, lumi_mask):
     return filtered
 
 
+def filter_by_run_num(list_of_files, run_list):
+    """Filter list of files by list of runs.
+    Modifies each DatasetFile's LumiList to only the run:LS in run_list.
+
+    Parameters
+    ----------
+    list_of_files : list[DatasetFile]
+        List of DatasetFiles to be filtered
+    run_list : list[int]
+        List of run numbers to keep.
+
+    Returns
+    -------
+    list[DatasetFile]
+        List of files that have run number in run_list
+    """
+
+    for f in list_of_files:
+        f.lumi_list.selectRuns(run_list)
+    return [f for f in list_of_files if f.lumi_list.compactList]
+
 
 def group_files_by_lumis_per_job(list_of_lumis, lumis_per_job):
     """Makes groups of files, splitting based on lumis_per_job.
@@ -744,7 +765,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             list_of_files = get_list_of_files_from_das(args.dataset, n_files)
             log.debug("Pre lumi filter")
             log.debug(list_of_files)
-            list_of_files = filter_by_lumi_list(list_of_files, lumi_mask)
+            if run_list:
+                list_of_files = filter_by_run_num(list_of_files, run_list)
+            if lumi_mask:
+                list_of_files = filter_by_lumi_list(list_of_files, lumi_mask)
             log.debug("After lumi filter")
             log.debug(list_of_files)
             if args.secondaryDataset:
