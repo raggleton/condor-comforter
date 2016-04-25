@@ -155,17 +155,14 @@ def filter_by_lumi_list(list_of_files, lumi_mask):
     list[DatasetFile]
         List of files that have run:LS in lumi_mask
     """
-    if lumi_mask is None:
-        return list_of_files
-    else:
-        filtered = []
-        for f in list_of_files:
-            overlap = f.lumi_list & lumi_mask
-            if len(overlap) > 0:
-                f.lumi_list = overlap
-                filtered.append(f)
-        return filtered
-        # return [f for f in list_of_files if len(f.lumi_list & lumi_list) > 0]
+    filtered = []
+    for f in list_of_files:
+        overlap = f.lumi_list & lumi_mask
+        if len(overlap) > 0:
+            f.lumi_list = overlap
+            filtered.append(f)
+    return filtered
+
 
 
 def group_files_by_lumis_per_job(list_of_lumis, lumis_per_job):
