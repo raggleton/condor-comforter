@@ -661,10 +661,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                         type=float, default=-1)
     parser.add_argument("--filelist",
                         help="Pass in a list of filenames to run over. "
-                        "This will ignore --dataset option.")
+                        "This will ignore --dataset/--lumiMask/--runRange options.")
     parser.add_argument("--outputScript",
-                        help="Optional: name of condor submission script. "
-                        "Default is <config>_<time>.condor")
+                        help="Name of condor submission script. "
+                        "Default is <config>_<time>.condor, recommended to put it on /storage.")
     parser.add_argument("--verbose", "-v",
                         help="Extra printout to clog up your screen.",
                         action='store_true')
