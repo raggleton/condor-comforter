@@ -314,12 +314,14 @@ def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename,
     # add in the config file and input filelist
     tar.add(config_filename, arcname="src/config.py")
     if input_filelist:
+        log.debug('Adding %s to tar', input_filelist)
         tar.add(input_filelist, arcname="src/filelist.py")
 
     # add in any other files the user wants
     for input_file in additional_input_files:
         if not os.path.isfile(input_file):
             raise IOError('Cannot find additional file %s' % input_file)
+            log.debug('Adding %s to tar', input_file)
         # we want it to end up in CMSSW_BASE/src, for now
         tar.add(input_file, arcname=os.path.join('src', os.path.basename(input_file)))
 
@@ -710,8 +712,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Why not just use args.lumiMask to hold result?
     run_list = parse_run_range(args.runRange) if args.runRange else None
     lumi_mask = setup_lumi_mask(args.lumiMask) if args.lumiMask else None
-    if run_list:
-        lumi_mask.selectRuns(run_list)
+    log.debug("Run range: %s", run_list)
+    log.debug("Lumi mask: %s", lumi_mask)
 
     ###########################################################################
     # Lookup dataset with das_client to determine number of files/jobs
@@ -778,8 +780,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             create_filelist(job_files, filelist_filename)
             create_lumilists(job_lumis, lumilist_filename)
 
-    log.debug("Will be submitting %d jobs, running over %d files",
-              total_num_jobs, args.totalUnits)
+    log.debug("Will be submitting %d jobs", total_num_jobs)
 
     ###########################################################################
     # Create sandbox of user's files
