@@ -485,6 +485,29 @@ def check_create_dir(dirname, info_msg=None, debug_msg=None):
         os.makedirs(dirname)
 
 
+def flag_mutually_exclusive_args(args, opts_a, opts_b):
+    """Flag mutually exclusive args (i.e can't specify both A and B).
+
+    Each of the opts in opts_a are incompatible with each of the opts in opts_b.
+    """
+    arg_dict = vars(args)
+    for oa, ob in product(opts_a, opts_b):
+        if arg_dict[oa] and arg_dict[ob]:
+            raise RuntimeError("Cannot specify both --%s and --%s" % (oa, ob))
+
+
+def flag_dependent_args(args, opts_a, opts_b):
+    """Flag dependent args (i.e B require A to be set).
+
+    Each of the opts in opts_b requires every opt in opts_a.
+    """
+    arg_dict = vars(args)
+    if all([arg_dict[oa] for oa in opts_a]):
+        for ob in opts_b:
+            if not arg_dict[ob]:
+                raise RuntimeError("--%s requires %s" % (oa, ob))
+
+
 def check_args(args):
     """Check program arguments.
 
@@ -504,10 +527,9 @@ def check_args(args):
     if not os.path.isfile(args.config):
         raise IOError("Cannot find config file %s" % args.config)
 
-    if args.filelist:
-        if args.dataset:
-            raise RuntimeError("Cannot use both --filelist and --dataset")
+    flag_mutually_exclusive_args(args, ['filelist'], ['dataset', 'splitByLumis'])
 
+    if args.filelist:
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
@@ -524,8 +546,7 @@ def check_args(args):
         raise RuntimeError("You can't have unitsPerJob > totalUnits!")
 
     if args.secondaryDataset:
-        if not args.dataset:
-            raise RuntimeError('--secondaryDataset requires --dataset to be specified')
+        flag_dependent_args(args, ['dataset'], ['secondaryDataset'])
         log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
 
     # make an output directory for log files
@@ -541,6 +562,8 @@ def check_args(args):
 
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
+
+    flag_mutually_exclusive_args(args, ['callgrind', 'valgrind'], ['filelist', 'dataset'])
 
 
 def is_url(path):
