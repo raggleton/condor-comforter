@@ -755,7 +755,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         if args.filelist:
             # Get files from user's file
             with open(args.filelist) as flist:
-                list_of_files = [line.strip() for line in flist if line.strip()]
+                list_of_files = [DatasetFile(name=line.strip(), lumi_list=None) for line in flist if line.strip()]
             filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
         else:
             filelist_filename = generate_filelist_filename(args.dataset)
@@ -782,7 +782,16 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             job_files = group_files_by_files_per_job(list_of_files, args.unitsPerJob)
             total_num_jobs = len(job_files)
             create_filelist(job_files, filelist_filename)
-            create_lumilists([f.lumi_list for f in job_files], lumilist_filename)
+            if lumilist_filename:
+                # make an overall lumilist for all files in each job
+                job_lumis = []
+                for f in job_files:
+                    tmp = f[0].lumi_list
+                    for x in f[1:]:
+                        tmp += x.lumi_list
+                    job_lumis.append(tmp)
+                create_lumilists(job_lumis, lumilist_filename)
+
         elif args.splitByLumis:
             # need to keep track of which files correspond with which lumi
             # this holds a map of {(run:LS) : DatasetFile}
@@ -810,7 +819,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     sandbox_local = "sandbox.tgz"
     additional_input_files = args.inputFile or []
-    if os.path.isfile(lumilist_filename):
+    if lumilist_filename and os.path.isfile(lumilist_filename):
         additional_input_files.append(lumilist_filename)
 
     sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
@@ -819,9 +828,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # rm local files
     if os.path.isfile(sandbox_local):
         os.remove(sandbox_local)
-    if os.path.isfile(filelist_filename):
+    if filelist_filename and os.path.isfile(filelist_filename):
         os.remove(filelist_filename)
-    if os.path.isfile(lumilist_filename):
+    if lumilist_filename and os.path.isfile(lumilist_filename):
         os.remove(lumilist_filename)
 
     ###########################################################################
