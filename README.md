@@ -20,9 +20,10 @@ Brief example:
 
 ```
 ./cmsRunCondor.py --config pset_tutorial_analysis.py \
---outputDir /hdfs/user/$LOGNAME/test \
 --dataset /ttHTobb_M125_13TeV_powheg_pythia8/RunIIFall15DR76-25nsPUfixed30NzshcalRaw_76X_mcRun2_asymptotic_v12-v1/AODSIM \
 --totalUnits 10 --unitsPerJob 5 --splitByFiles \
+--outputDir /hdfs/user/$LOGNAME/test \
+--outputScript /storage/$LOGNAME/test/cms.condor \
 --dag /storage/$LOGNAME/test/cms.dag \
 --log /storage/$LOGNAME/test
 ```
