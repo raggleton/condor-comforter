@@ -2,3 +2,8 @@
 *.log
 *.err
 *.dag
+*.root
+*.pyc
+*.condor.*
+*.dag.*
+*.tgz

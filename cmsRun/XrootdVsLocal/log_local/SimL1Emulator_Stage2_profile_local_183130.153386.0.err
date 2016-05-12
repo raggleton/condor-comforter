@@ -1,0 +1,158 @@
+WARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.
+%MSG-w CondDBESSource:  (NoModuleName) 23-Oct-2015 18:36:59 BST pre-events
+[WARNING] You are reading tag "RecoTauTag_againstMuonMVAv1" from V1 account "frontier://FrontierProd/CMS_COND_PAT_000". The concerned Conditions might be out of date.
+%MSG
+23-Oct-2015 18:37:09 BST  Initiating request to open file file:/hdfs/user/ra12451/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+23-Oct-2015 18:37:10 BST  Successfully opened file file:/hdfs/user/ra12451/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+Begin processing the 1st record. Run 1, Event 6377473, LumiSection 33217 at 23-Oct-2015 18:37:19.750 BST
+Begin processing the 201st record. Run 1, Event 7877001, LumiSection 41027 at 23-Oct-2015 18:39:18.695 BST
+Begin processing the 401st record. Run 1, Event 7879121, LumiSection 41038 at 23-Oct-2015 18:41:15.128 BST
+Begin processing the 601st record. Run 1, Event 7885849, LumiSection 41073 at 23-Oct-2015 18:43:12.029 BST
+Begin processing the 801st record. Run 1, Event 6454497, LumiSection 33618 at 23-Oct-2015 18:45:07.562 BST
+Begin processing the 1001st record. Run 1, Event 6457577, LumiSection 33634 at 23-Oct-2015 18:47:03.817 BST
+Begin processing the 1201st record. Run 1, Event 6654385, LumiSection 34659 at 23-Oct-2015 18:48:59.398 BST
+Begin processing the 1401st record. Run 1, Event 6658233, LumiSection 34679 at 23-Oct-2015 18:50:56.496 BST
+Begin processing the 1601st record. Run 1, Event 6479297, LumiSection 33747 at 23-Oct-2015 18:52:51.625 BST
+Begin processing the 1801st record. Run 1, Event 6592201, LumiSection 34335 at 23-Oct-2015 18:54:45.250 BST
+Begin processing the 2001st record. Run 1, Event 6761553, LumiSection 35217 at 23-Oct-2015 18:56:41.459 BST
+Begin processing the 2201st record. Run 1, Event 7062041, LumiSection 36782 at 23-Oct-2015 18:58:41.061 BST
+23-Oct-2015 18:59:40 BST  Closed file file:/hdfs/user/ra12451/003BEF9B-C24E-E511-B4B7-0025905A609E.root
+23-Oct-2015 18:59:40 BST  Initiating request to open file file:/hdfs/user/ra12451/00EA9A04-CD4E-E511-8F7B-001517E7410C.root
+23-Oct-2015 18:59:40 BST  Successfully opened file file:/hdfs/user/ra12451/00EA9A04-CD4E-E511-8F7B-001517E7410C.root
+Begin processing the 2401st record. Run 1, Event 4779169, LumiSection 24892 at 23-Oct-2015 19:00:38.347 BST
+Begin processing the 2601st record. Run 1, Event 4782057, LumiSection 24907 at 23-Oct-2015 19:02:35.975 BST
+Begin processing the 2801st record. Run 1, Event 4784369, LumiSection 24919 at 23-Oct-2015 19:04:33.424 BST
+Begin processing the 3001st record. Run 1, Event 4975225, LumiSection 25913 at 23-Oct-2015 19:06:31.916 BST
+Begin processing the 3201st record. Run 1, Event 4985217, LumiSection 25965 at 23-Oct-2015 19:08:31.361 BST
+Begin processing the 3401st record. Run 1, Event 5193161, LumiSection 27048 at 23-Oct-2015 19:10:32.709 BST
+Begin processing the 3601st record. Run 1, Event 5400913, LumiSection 28130 at 23-Oct-2015 19:12:33.936 BST
+Begin processing the 3801st record. Run 1, Event 5581785, LumiSection 29072 at 23-Oct-2015 19:14:33.069 BST
+Begin processing the 4001st record. Run 1, Event 6065825, LumiSection 31593 at 23-Oct-2015 19:16:32.192 BST
+Begin processing the 4201st record. Run 1, Event 6068329, LumiSection 31606 at 23-Oct-2015 19:18:32.262 BST
+Begin processing the 4401st record. Run 1, Event 6069297, LumiSection 31611 at 23-Oct-2015 19:20:32.009 BST
+Begin processing the 4601st record. Run 1, Event 6092921, LumiSection 31734 at 23-Oct-2015 19:22:34.440 BST
+23-Oct-2015 19:22:38 BST  Closed file file:/hdfs/user/ra12451/00EA9A04-CD4E-E511-8F7B-001517E7410C.root
+
+TrigReport ---------- Event  Summary ------------
+TrigReport Events total = 4608 passed = 4608 failed = 0
+
+TrigReport ---------- Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+TrigReport     1    0       4608       4608          0          0 p
+
+TrigReport -------End-Path   Summary ------------
+TrigReport  Trig Bit#   Executed     Passed     Failed      Error Name
+
+TrigReport ---------- Modules in Path: p ------------
+TrigReport  Trig Bit#    Visited     Passed     Failed      Error Name
+TrigReport     1    0       4608       4608          0          0 ecalDigis
+TrigReport     1    1       4608       4608          0          0 hcalDigis
+TrigReport     1    2       4608       4608          0          0 caloStage2Layer1Digis
+TrigReport     1    3       4608       4608          0          0 caloStage2Digis
+TrigReport     1    4       4608       4608          0          0 stage2JetToL1Jet
+TrigReport     1    5       4608       4608          0          0 l1UpgradeTreeProducer
+TrigReport     1    6       4608       4608          0          0 genJetToL1JetAk4
+TrigReport     1    7       4608       4608          0          0 l1ExtraTreeProducerGenAk4
+TrigReport     1    8       4608       4608          0          0 puInfo
+
+TrigReport ---------- Module Summary ------------
+TrigReport    Visited   Executed     Passed     Failed      Error Name
+TrigReport       4608       4608       4608          0          0 ecalDigis
+TrigReport       4608       4608       4608          0          0 hcalDigis
+TrigReport       4608       4608       4608          0          0 caloStage2Layer1Digis
+TrigReport       4608       4608       4608          0          0 caloStage2Digis
+TrigReport       4608       4608       4608          0          0 stage2JetToL1Jet
+TrigReport       4608       4608       4608          0          0 l1UpgradeTreeProducer
+TrigReport       4608       4608       4608          0          0 genJetToL1JetAk4
+TrigReport       4608       4608       4608          0          0 l1ExtraTreeProducerGenAk4
+TrigReport       4608       4608       4608          0          0 puInfo
+TrigReport       4608       4608       4608          0          0 TriggerResults
+
+TimeReport ---------- Event  Summary ---[sec]----
+TimeReport       event loop CPU/event = 0.543568
+TimeReport      event loop Real/event = 0.591625
+TimeReport     sum Streams Real/event = 0.581424
+TimeReport efficiency CPU/Real/thread = 0.918771
+
+TimeReport ---------- Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport   0.579591     0.579591  p
+TimeReport  per event     per exec  Name
+
+TimeReport -------End-Path   Summary ---[Real sec]----
+TimeReport  per event     per exec  Name
+TimeReport  per event     per exec  Name
+
+TimeReport ---------- Modules in Path: p ---[Real sec]----
+TimeReport  per event    per visit  Name
+TimeReport   0.003325     0.003325  ecalDigis
+TimeReport   0.003121     0.003121  hcalDigis
+TimeReport   0.003521     0.003521  caloStage2Layer1Digis
+TimeReport   0.520536     0.520536  caloStage2Digis
+TimeReport   0.000039     0.000039  stage2JetToL1Jet
+TimeReport   0.000125     0.000125  l1UpgradeTreeProducer
+TimeReport   0.000033     0.000033  genJetToL1JetAk4
+TimeReport   0.000266     0.000266  l1ExtraTreeProducerGenAk4
+TimeReport   0.000018     0.000018  puInfo
+TimeReport  per event    per visit  Name
+
+TimeReport ---------- Module Summary ---[Real sec]----
+TimeReport  per event     per exec    per visit  Name
+TimeReport   0.000039     0.000039     0.000039  TriggerResults
+TimeReport   0.003325     0.003325     0.003325  ecalDigis
+TimeReport   0.003121     0.003121     0.003121  hcalDigis
+TimeReport   0.003521     0.003521     0.003521  caloStage2Layer1Digis
+TimeReport   0.520536     0.520536     0.520536  caloStage2Digis
+TimeReport   0.000039     0.000039     0.000039  stage2JetToL1Jet
+TimeReport   0.000125     0.000125     0.000125  l1UpgradeTreeProducer
+TimeReport   0.000033     0.000033     0.000033  genJetToL1JetAk4
+TimeReport   0.000266     0.000266     0.000266  l1ExtraTreeProducerGenAk4
+TimeReport   0.000018     0.000018     0.000018  puInfo
+TimeReport  per event     per exec    per visit  Name
+
+T---Report end!
+
+
+=============================================
+
+MessageLogger Summary
+
+ type     category        sev    module        subroutine        count    total
+ ---- -------------------- -- ---------------- ----------------  -----    -----
+    1 CondDBESSource       -w (NoModuleName)                         1        1
+    2 fileAction           -s file_close                             2        2
+    3 fileAction           -s file_open                              4        4
+
+ type    category    Examples: run/evt        run/evt          run/evt
+ ---- -------------------- ---------------- ---------------- ----------------
+    1 CondDBESSource       pre-events                        
+    2 fileAction           PostProcessEvent PostEndRun       
+    3 fileAction           pre-events       pre-events       PostProcessEvent
+
+Severity    # Occurrences   Total Occurrences
+--------    -------------   -----------------
+Warning                 1                   1
+System                  6                   6
+	Command being timed: "cmsRun wrapper.py"
+	User time (seconds): 2506.68
+	System time (seconds): 23.25
+	Percent of CPU this job got: 90%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 46:26.63
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1329936
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 4542
+	Minor (reclaiming a frame) page faults: 12563737
+	Voluntary context switches: 106372
+	Involuntary context switches: 13738
+	Swaps: 0
+	File system inputs: 6667560
+	File system outputs: 33840
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
