@@ -180,7 +180,8 @@ elif [[ $doValgrind == 1 ]]; then
     echo "Running with valgrind"
     valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all cmsRun $wrapper
 else
-    /usr/bin/time -v cmsRun -p $wrapper -j $reportFile
+    # cmsRun args MUST be in this order otherwise complains it doesn't know -j
+    /usr/bin/time -v cmsRun -j $reportFile $wrapper
 fi
 cmsResult=$?
 echo "CMS JOB OUTPUT" $cmsResult
