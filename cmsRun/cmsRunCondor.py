@@ -499,11 +499,10 @@ def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jo
 def check_create_dir(dirname, info_msg=None, debug_msg=None):
     """Check if directory exists, if not make it."""
     if not os.path.isdir(dirname):
-        if info_msg:
-            log.info(info_msg)
-        if debug_msg:
-            log.debug(debug_msg)
-        os.makedirs(dirname)
+        if os.path.abspath(dirname).startswith('/hdfs'):
+            subprocess.check_call(['hadoop', 'fs', '-mkdir', '-p', os.path.abspath(dirname).replace('/hdfs', '')])
+        else:
+            os.makedirs(dirname)
 
 
 def flag_mutually_exclusive_args(args, opts_a, opts_b):
