@@ -759,10 +759,12 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             if n_files < 0:
                 n_files = None
             elif n_files < 1:
-                n_files = round(n_files * len(list_of_files))
-            elif n_files >= len(list_of_files):
-                raise IndexError("You cannot have more files than in the files:"
-                                 " use -1 (the default) if you want them all")
+                n_files = int(round(n_files * len(list_of_files)))
+            else:
+                n_files = int(n_files)
+                if n_files >= len(list_of_files):
+                    raise IndexError("You cannot have more files than in the files:"
+                                     " use -1 (the default) if you want them all")
             list_of_files = list_of_files[:n_files]
             filelist_filename = "filelist_user_%s.py" % (strftime("%H%M%S"))  # add time to ensure unique
         else:
