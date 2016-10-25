@@ -888,7 +888,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         else:
             job_name = args.dataset[1:].replace("/", "_").replace("-", "_")
 
-        status_filename = args.dag.replace(".dag", ".status")
+        status_filename = args.dag.replace(".dag", "")  # TODO: handle if it doesn't end with .dag
+        status_filename += ".status"
         write_dag_file(args.dag, status_filename, args.outputScript, total_num_jobs, job_name)
 
     ###########################################################################
