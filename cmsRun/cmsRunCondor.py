@@ -35,6 +35,87 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
     pass
 
 
+class ArgParser(argparse.ArgumentParser):
+    """Class to handle arg parsing"""
+    def __init__(self, *args, **kwargs):
+        super(ArgParser, self).__init__(*args, **kwargs)
+        self.add_arguments()
+
+    def add_arguments(self):
+        self.add_argument("--config",
+                          help="CMSSW config file you want to run.",
+                          required=True)
+        self.add_argument("--outputDir",
+                          help="Where you want your output to be stored. "
+                          "Must be on /hdfs.",
+                          required=True)
+        self.add_argument("--dataset",
+                          help="Name of dataset you want to run over")
+        self.add_argument("--secondaryDataset",
+                          help="Name of secondary dataset. This allows you to do the "
+                          "'2-file' solution, e.g.to run both RAW and RECO in the "
+                          "same job. The --unitsPerJob and --totalUnits options "
+                          "will then apply to the child dataset (specified with --dataset)")
+        split_group = self.add_mutually_exclusive_group(required=True)
+        split_group.add_argument("--splitByFiles",
+                                 help='Unit = file',
+                                 action='store_true')
+        split_group.add_argument("--splitByLumis",
+                                 help='Unit = lumisection',
+                                 action='store_true')
+        self.add_argument("--unitsPerJob",
+                          help="Number of units to run over per job.",
+                          type=int)
+        self.add_argument("--totalUnits",
+                          help="Total number of units to run over. "
+                          "Default is ALL (-1). Also acceptable is a fraction of "
+                          "the whole dataset (0-1), or an integer number of files (>=1).",
+                          type=float,
+                          default=-1)
+        self.add_argument("--filelist",
+                          help="Pass in a list of filenames to run over. "
+                          "This will ignore --dataset/--lumiMask/--runRange options.")
+        self.add_argument("--outputScript",
+                          help="Name of condor submission script. "
+                          "Default is <config>_<time>.condor, recommended to put it on /storage.")
+        self.add_argument("--verbose", "-v",
+                          help="Extra printout to clog up your screen.",
+                          action='store_true')
+        self.add_argument("--dry",
+                          help="Dry-run: only make condor submission script, "
+                          "don't submit to queue.",
+                          action='store_true')
+        self.add_argument("--dag",
+                          help="Specify DAG filename if you want to run as a condor DAG."
+                          "**Strongly recommended** to put it on /storage",
+                          type=str),
+        self.add_argument('--log',
+                          help="Location to store job stdout/err/log files. "
+                          "Default is $PWD/logs, but would recommend to put it on /storage",
+                          default='logs')
+        self.add_argument('--inputFile',
+                          help="Additional input file(s) needed by cmsRun.",
+                          action='append')
+        self.add_argument('--lumiMask',
+                          help='Specify file or URL with {run:lumisections} to run over')
+        self.add_argument('--runRange',
+                          help='Specify run number(s) to run over. List, or range '
+                          '(or combine). Must be comma separated. '
+                          'e.g. 259700,269710-259720')
+        self.add_argument('--callgrind',
+                          help='Run using callgrind. Note that in this mode, '
+                          'it will use the files and # evts in the config. '
+                          'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
+                          'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
+                          action='store_true')
+        self.add_argument('--valgrind',
+                          help='Run using valgrind to find mem leaks. Note that in this mode, '
+                          'it will use the files and # evts in the config. '
+                          'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
+                          'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
+                          action='store_true')
+
+
 class DatasetFile(object):
     """Hold info about a file in a dataset"""
 
@@ -645,79 +726,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     Returns a dict of information about the job.
     """
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=CustomFormatter)
-    parser.add_argument("--config",
-                        help="CMSSW config file you want to run.",
-                        required=True)
-    parser.add_argument("--outputDir",
-                        help="Where you want your output to be stored. "
-                        "Must be on /hdfs.",
-                        required=True)
-    parser.add_argument("--dataset",
-                        help="Name of dataset you want to run over")
-    parser.add_argument("--secondaryDataset",
-                        help="Name of secondary dataset. This allows you to do the "
-                        "'2-file' solution, e.g.to run both RAW and RECO in the "
-                        "same job. The --unitsPerJob and --totalUnits options "
-                        "will then apply to the child dataset (specified with --dataset)")
-    split_group = parser.add_mutually_exclusive_group(required=True)
-    split_group.add_argument("--splitByFiles",
-                             help='Unit = file',
-                             action='store_true')
-    split_group.add_argument("--splitByLumis",
-                             help='Unit = lumisection',
-                             action='store_true')
-    parser.add_argument("--unitsPerJob",
-                        help="Number of units to run over per job.",
-                        type=int)
-    parser.add_argument("--totalUnits",
-                        help="Total number of units to run over. "
-                        "Default is ALL (-1). Also acceptable is a fraction of "
-                        "the whole dataset (0-1), or an integer number of files (>=1).",
-                        type=float, default=-1)
-    parser.add_argument("--filelist",
-                        help="Pass in a list of filenames to run over. "
-                        "This will ignore --dataset/--lumiMask/--runRange options.")
-    parser.add_argument("--outputScript",
-                        help="Name of condor submission script. "
-                        "Default is <config>_<time>.condor, recommended to put it on /storage.")
-    parser.add_argument("--verbose", "-v",
-                        help="Extra printout to clog up your screen.",
-                        action='store_true')
-    parser.add_argument("--dry",
-                        help="Dry-run: only make condor submission script, "
-                        "don't submit to queue.",
-                        action='store_true')
-    parser.add_argument("--dag",
-                        type=str,
-                        help="Specify DAG filename if you want to run as a condor DAG."
-                        "**Strongly recommended** to put it on /storage")
-    parser.add_argument('--log',
-                        help="Location to store job stdout/err/log files. "
-                        "Default is $PWD/logs, but would recommend to put it on /storage",
-                        default='logs')
-    parser.add_argument('--inputFile',
-                        help="Additional input file(s) needed by cmsRun.",
-                        action='append')
-    parser.add_argument('--lumiMask',
-                        help='Specify file or URL with {run:lumisections} to run over')
-    parser.add_argument('--runRange',
-                        help='Specify run number(s) to run over. List, or range '
-                        '(or combine). Must be comma separated. '
-                        'e.g. 259700,269710-259720')
-    parser.add_argument('--callgrind',
-                        help='Run using callgrind. Note that in this mode, '
-                        'it will use the files and # evts in the config. '
-                        'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
-                        'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
-                        action='store_true')
-    parser.add_argument('--valgrind',
-                        help='Run using valgrind to find mem leaks. Note that in this mode, '
-                        'it will use the files and # evts in the config. '
-                        'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
-                        'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
-                        action='store_true')
+    parser = ArgParser(description=__doc__,
+                       formatter_class=CustomFormatter)
     args = parser.parse_args(args=in_args)
 
     if args.verbose:
