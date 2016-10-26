@@ -24,8 +24,6 @@ from time import strftime
 from itertools import izip_longest, izip, product
 import FWCore.PythonUtilities.LumiList as LumiList
 
-import htcondenser as ht
-
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -106,13 +104,13 @@ class ArgParser(argparse.ArgumentParser):
                           'e.g. 259700,269710-259720')
         self.add_argument('--callgrind',
                           help='Run using callgrind. Note that in this mode, '
-                          'it will use the files and # events in the CMSSW config. '
+                          'it will use the files and # evts in the config. '
                           'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
                           'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
                           action='store_true')
         self.add_argument('--valgrind',
                           help='Run using valgrind to find mem leaks. Note that in this mode, '
-                          'it will use the files and # events in the CMSSW config. '
+                          'it will use the files and # evts in the config. '
                           'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
                           'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
                           action='store_true')
@@ -363,15 +361,17 @@ def create_lumilists(jobs_lumis, lumilist_filename):
     log.info("List of lumis for each job written to %s", lumilist_filename)
 
 
-def setup_sandbox(sandbox_filename, cmssw_config_filename,
+def setup_sandbox(sandbox_filename, sandbox_dest_dir, config_filename,
                   input_filelist, additional_input_files):
-    """Create sandbox gzip of libs/headers/py/config/input filelist.
+    """Create sandbox gzip of libs/headers/py/config/input filelist, & copy to HDFS.
 
     Parameters
     ----------
     sandbox_filename : str
         Filename of sandbox
-    cmssw_config_filename : str
+    sandbox_dest_dir : str
+        Destination directory for sandbox. Must be on /hdfs
+    config_filename : str
         Filename of CMSSW config file to be included.
     input_filelist : str or None
         Filename of list of files for worker. If None, will not be added, and
@@ -379,6 +379,15 @@ def setup_sandbox(sandbox_filename, cmssw_config_filename,
     additional_input_files : list[str]
         List of additional input files to add to sandbox
 
+    Returns
+    -------
+    str
+        Location of sandbox zip on /hdfs
+
+    Raises
+    ------
+    Exception
+        If sandbox_dest_dir is not on /hdfs
     """
     log.info('Creating sandbox')
 
@@ -403,7 +412,7 @@ def setup_sandbox(sandbox_filename, cmssw_config_filename,
             tar.add(root, d, recursive=True)
 
     # add in the config file and input filelist
-    tar.add(cmssw_config_filename, arcname="src/config.py")
+    tar.add(config_filename, arcname="src/config.py")
     if input_filelist:
         log.debug('Adding %s to tar', input_filelist)
         tar.add(input_filelist, arcname="src/filelist.py")
@@ -417,6 +426,16 @@ def setup_sandbox(sandbox_filename, cmssw_config_filename,
         tar.add(input_file, arcname=os.path.join('src', os.path.basename(input_file)))
 
     tar.close()
+
+    # copy to /hdfs or /storage to avoid transfer/copying issues
+    sandbox_location = os.path.join(sandbox_dest_dir, sandbox_filename)
+    if sandbox_dest_dir.startswith('/hdfs'):
+        log.info("Copying %s to %s", sandbox_filename, sandbox_location)
+        subprocess.check_call(['hadoop', 'fs', '-copyFromLocal', '-f',
+                               sandbox_filename, sandbox_location.replace("/hdfs", "")])
+    else:
+        raise Exception("Not a valid output dir for sandbox - not /hdfs")
+    return sandbox_location
 
 
 def das_file_to_lumilist(data):
@@ -496,19 +515,66 @@ def get_list_of_files_from_das(dataset, num_files):
     return files
 
 
-def get_output_files_from_config(cmssw_config_filename):
-    """Get any output filenames from the CMSSW config file"""
-    import FWCore.ParameterSet.Config as cms
-    # no need to add the dir of the config file - should already be there from scram b
-    myscript = __import__(os.path.basename(cmssw_config_filename).replace(".py", ""))
-    process = myscript.process
-    output_files = []
-    # do separately for TFileService as not an outputModule
-    if hasattr(process, 'TFileService'):
-        output_files.append(process.TFileService.fileName.value())
-    for omod in process.outputModules.itervalues():
-        output_files.append(omod.fileName.value())
-    return output_files
+def write_condor_job_file(job_filename, log_dir, args_str, num_jobs):
+    """Write condor job file.
+
+    Parameters
+    ----------
+    job_filename : str
+        filename of job file
+    log_dir : str
+        Dir for logs
+    args_str : str
+        Argument string to pass to worker script
+    num_jobs : int
+        Total number of jobs. For DAGs this should be 1 as the DAG should
+        take care of the actual total number of jobs.
+    """
+
+    # Get job file template
+    script_dir = os.path.dirname(__file__)
+    with open(os.path.join(script_dir, 'cmsRun_template.condor')) as template:
+        job_template = template.read()
+
+    job = job_template.replace("SEDINITIAL", "")  # don't use initialdir for now
+    log_filename = os.path.join(log_dir, os.path.basename(job_filename).replace(".condor", ""))
+    log.info('Logs for each job will be written to %s', log_dir)
+    job = job.replace("SEDLOG", log_filename)
+    job = job.replace("SEDARGS", args_str)
+    job = job.replace("SEDEXE", os.path.join(script_dir, 'cmsRun_worker.sh'))
+    job = job.replace("SEDNJOBS", num_jobs)
+    transfers = []
+    job = job.replace("SEDINPUTFILES", ", ".join(transfers))
+
+    with open(job_filename, 'w') as submit_script:
+        submit_script.write(job)
+    log.info('New condor submission script written to %s', job_filename)
+
+
+def write_dag_file(dag_filepath, status_filename, condor_jobscript, total_num_jobs, job_name):
+    """Write DAG description file.
+
+    Parameters
+    ----------
+    dag_filepath : str
+        Filepath for DAG file
+    status_filename : str
+        Filepath for DAG status file
+    condor_jobscript : str
+        Filepath for condor job submit file
+    total_num_jobs : int
+        Total number of jobs to submit
+    job_name : str
+        Name of job. An index will be added for each job
+    """
+    log.info("DAG Filename: %s", dag_filepath)
+    with open(dag_filepath, "w") as dag_file:
+        for job_ind in xrange(total_num_jobs):
+            jobName = "%d_%s" % (job_ind, job_name)
+            dag_file.write('JOB %s %s\n' % (jobName, condor_jobscript))
+            dag_file.write('VARS %s index="%d"\n' % (jobName, job_ind))
+            dag_file.write('RETRY %s 5\n' % jobName)
+        dag_file.write("NODE_STATUS_FILE %s 30\n" % status_filename)
 
 
 def check_create_dir(dirname, info_msg=None, debug_msg=None):
@@ -518,16 +584,6 @@ def check_create_dir(dirname, info_msg=None, debug_msg=None):
             subprocess.check_call(['hadoop', 'fs', '-mkdir', '-p', os.path.abspath(dirname).replace('/hdfs', '')])
         else:
             os.makedirs(dirname)
-
-
-def remove_file(filename):
-    """Remove file, with pre-check to see if it exists"""
-    filename = os.path.abspath(filename)
-    if os.path.isfile(filename):
-        if filename.startswith('/hdfs'):
-            subprocess.check_call(['hadoop', 'fs', '-rm', filename.replace('/hdfs', '')])
-        else:
-            os.remove(filename)
 
 
 def flag_mutually_exclusive_args(args, opts_a, opts_b):
@@ -578,9 +634,6 @@ def check_args(args):
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
-
-    if not args.valgrind and not args.callgrind and not args.filelist and not args.dataset:
-        raise RuntimeError('You must specify a dataset or a filelist')
 
     # for now, restrict output dir to /hdfs
     if not args.outputDir.startswith('/hdfs'):
@@ -703,7 +756,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if not args.valgrind and not args.callgrind:
         list_of_files, list_of_secondary_files = None, None
         list_of_lumis = None
-
+        if not args.filelist and not args.dataset:
+            raise RuntimeError('You must specify a dataset or a filelist')
         if args.unitsPerJob is None:
             raise RuntimeError('You must specify an integer number of --unitsPerJob')
 
@@ -778,23 +832,62 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             create_filelist(job_files, filelist_filename)
             create_lumilists(job_lumis, lumilist_filename)
 
-    log.info("Will be submitting %d jobs", total_num_jobs)
+    log.debug("Will be submitting %d jobs", total_num_jobs)
 
     ###########################################################################
     # Create sandbox of user's files
     ###########################################################################
     sandbox_local = "sandbox.tgz"
-
     additional_input_files = args.inputFile or []
     if lumilist_filename and os.path.isfile(lumilist_filename):
         additional_input_files.append(lumilist_filename)
 
-    setup_sandbox(sandbox_local, args.config, filelist_filename, additional_input_files)
+    sandbox_location = setup_sandbox(sandbox_local, args.outputDir,
+                                     args.config, filelist_filename,
+                                     additional_input_files)
+    # rm local files
+    if os.path.isfile(sandbox_local):
+        os.remove(sandbox_local)
+    if filelist_filename and os.path.isfile(filelist_filename):
+        os.remove(filelist_filename)
+    if lumilist_filename and os.path.isfile(lumilist_filename):
+        os.remove(lumilist_filename)
 
     ###########################################################################
-    # Setup DAG if needed
+    # Make a condor submission script
     ###########################################################################
-    cmsrun_dag = None
+    config_filename = os.path.basename(args.config)
+    if not args.outputScript:
+        args.outputScript = '%s_%s.condor' % (config_filename.replace(".py", ""),
+                                              strftime("%H%M%S"))
+    args.outputScript = os.path.realpath(args.outputScript)
+    check_create_dir(os.path.dirname(args.outputScript),
+                     info_msg="Output condor script directory doesn't exist, "
+                              "making it: %s" % os.path.dirname(args.outputScript))
+
+    # Construct args to pass to cmsRun_worker.sh on the worker node
+    args_dict = dict(output=args.outputDir,
+                     ind="index" if args.dag else "process",
+                     sandbox=sandbox_location)
+    args_str = "-o {output} -i $({ind}) -a $ENV(SCRAM_ARCH) " \
+               "-c $ENV(CMSSW_VERSION) -S {sandbox}".format(**args_dict)
+    if args.lumiMask or args.runRange:
+        if lumilist_filename:
+            args_str += ' -l ' + os.path.basename(lumilist_filename)
+        elif is_url(args.lumiMask):
+            args_str += ' -l ' + args.lumiMask
+    if args.valgrind:
+        args_str += ' -m'
+    if args.callgrind:
+        args_str += ' -p'
+
+    num_jobs = str(1) if args.dag else str(total_num_jobs)
+
+    write_condor_job_file(args.outputScript, args.log, args_str, num_jobs)
+
+    ###########################################################################
+    # Setup DAG file if needed
+    ###########################################################################
     if args.dag:
         if args.filelist:
             job_name = os.path.splitext(os.path.basename(args.filelist))[0][:20]
@@ -807,100 +900,22 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
         status_filename = args.dag.replace(".dag", "")  # TODO: handle if it doesn't end with .dag
         status_filename += ".status"
-
-        cmsrun_dag = ht.DAGMan(filename=args.dag, status_file=status_filename)
-
-    ###########################################################################
-    # Create Jobs
-    ###########################################################################
-    if not args.outputScript:
-        args.outputScript = '/storage/{0}/cmsRunCondor/{1}/{2}_{3}.condor'.format(
-            os.environ['LOGNAME'],
-            strftime("%d_%b_%y"),
-            os.path.basename(args.config).replace(".py", ""),
-            strftime("%H%M%S"))
-        log.warning("You did not specify a condor output script. "
-                    "Auto-generated one at: %s". args.outputScript)
-
-    args.outputScript = os.path.realpath(args.outputScript)
-
-    cmsrun_jobs = ht.JobSet(
-        exe='cmsRun_worker.sh',
-        copy_exe=True,
-        filename=args.outputScript,
-        out_dir=args.log, out_file='cmsRun.$(cluster).$(process).out',
-        err_dir=args.log, err_file='cmsRun.$(cluster).$(process).err',
-        log_dir=args.log, log_file='cmsRun.$(cluster).$(process).log',
-        cpus=1, memory='2GB', disk='3GB',
-        # cpus=1, memory='1GB', disk='500MB',
-        certificate=True,
-        transfer_hdfs_input=False,
-        share_exe_setup=True,
-        common_input_files=[sandbox_local],  # EVERYTHING should be in the sandbox
-        hdfs_store=args.outputDir
-    )
-
-    output_files = get_output_files_from_config(args.config)
-
-    for job_ind in xrange(total_num_jobs):
-        # Construct args to pass to cmsRun_worker.sh on the worker node
-        args_dict = dict(output=args.outputDir, ind=job_ind)
-        report_filename = "report{ind}.xml".format(**args_dict)
-        args_dict['report'] = report_filename
-        args_str = "-o {output} -i {ind} -a $ENV(SCRAM_ARCH) " \
-                   "-c $ENV(CMSSW_VERSION) -r {report}".format(**args_dict)
-        if args.lumiMask or args.runRange:
-            if lumilist_filename:
-                args_str += ' -l ' + os.path.basename(lumilist_filename)
-            elif is_url(args.lumiMask):
-                args_str += ' -l ' + args.lumiMask
-        if args.valgrind:
-            args_str += ' -m'
-        if args.callgrind:
-            args_str += ' -p'
-
-        # warning: this must be aligned with whatever cmsRun_worker.sh does...
-        job_output_files = [o.replace('.root', '_%d.root' % job_ind) for o in output_files]
-        job_output_files.append(report_filename)
-
-        if args.callgrind or args.valgrind:
-            job_output_files.append('callgrind.out.*')
-
-        job = ht.Job(
-            name='cmsRun_%d' % job_ind,
-            args=args_str,
-            input_files=None,
-            output_files=['CMSSW_*/src/'+ j for j in job_output_files],  # worker script operates in CMSSW/src
-            hdfs_mirror_dir=args.outputDir
-        )
-
-        cmsrun_jobs.add_job(job)
-        if args.dag:
-            cmsrun_dag.add_job(job, retry=5)
+        write_dag_file(args.dag, status_filename, args.outputScript, total_num_jobs, job_name)
 
     ###########################################################################
-    # Submit unless dry run
+    # submit to queue unless dry run
     ###########################################################################
     if not args.dry:
+        if not args.dag:
+            subprocess.check_call(['condor_submit', args.outputScript])
+
         if args.dag:
-            cmsrun_dag.submit()
-        else:
-            cmsrun_jobs.submit()
+            subprocess.check_call(['condor_submit_dag', args.dag])
+            print "Check DAG status:"
+            print "DAGstatus.py", status_filename
 
-    ###########################################################################
-    # Cleanup local files
-    ###########################################################################
-    remove_file(sandbox_local)
-    if filelist_filename:
-        remove_file(filelist_filename)
-    if lumilist_filename:
-        remove_file(lumilist_filename)
-
-    ###########################################################################
     # Return job properties
-    ###########################################################################
-    return cmsrun_dag, cmsrun_jobs, dict(
-                dataset=args.dataset,
+    return dict(dataset=args.dataset,
                 jobFile=args.outputScript,
                 totalNumJobs=total_num_jobs,
                 totaNumFiles=args.totalUnits,
