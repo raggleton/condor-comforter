@@ -5,14 +5,14 @@ These will probably be a little hacky, but should offer some inspiration for oth
 
 Please report any issues, and add any helpful scripts for other users!
 
-I take no responsibility for your results using these - with great power comes great potential for DDOS'ing DAS.
+Most things require [`htcondenser`](https://github.com/raggleton/htcondenser).
 
 Robin Aggleton
 
 ##cmsRunCondor
 
 This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
-Currently supports output to /hdfs only at the moment.
+Currently only supports output to `/hdfs`.
 
 Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one dataset with a config file.
 
@@ -26,7 +26,7 @@ Brief example **requires CMSSW 80X release**:
 --dag
 ```
 
-You can then monitor job progress with [`DAGstatus.py`](cmsRun/DAGstatus.py).
+You can then monitor job progress with `DAGstatus.py` (part of `htcondenser` package)
 
 See all options by doing `cmsRunCondor.py --help`.
 
@@ -40,13 +40,17 @@ Features currently supported:
 
 - Run with a secondary dataset to do "2-file solution" (e.g. mixing RECO with RAW)
 
-- Run with a specified set of files
+- Run with a specified list of files
 
 - Specify additional input files needed for running (e.g. calibration files)
 
-- Easy monitoring of jobs using [`DAGstatus.py`](cmsRun/DAGstatus.py)
+- Easy monitoring of jobs using `DAGstatus`
 
 - Profile cmsRun jobs with valgrind or callgrind
+
+##haddaway
+
+Simple script to put `hadd` jobs onto HTCondor, splitting them up into smaller parallel groups.
 
 ##exampleDAG
 
