@@ -16,16 +16,14 @@ Currently supports output to /hdfs only at the moment.
 
 Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one dataset with a config file.
 
-Brief example:
+Brief example **requires CMSSW 80X release**:
 
 ```
-./cmsRunCondor.py --config pset_tutorial_analysis.py \
---dataset /ttHTobb_M125_13TeV_powheg_pythia8/RunIIFall15DR76-25nsPUfixed30NzshcalRaw_76X_mcRun2_asymptotic_v12-v1/AODSIM \
+./cmsRunCondor.py pset_tutorial_analysis.py \
+--dataset /QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/MINIAODSIM \
 --totalUnits 10 --unitsPerJob 5 --splitByFiles \
---outputDir /hdfs/user/$LOGNAME/test \
---outputScript /storage/$LOGNAME/test/cms.condor \
---dag /storage/$LOGNAME/test/cms.dag \
---log /storage/$LOGNAME/test
+--outputDir /hdfs/user/$LOGNAME/cmsRunCondor \
+--dag
 ```
 
 You can then monitor job progress with [`DAGstatus.py`](cmsRun/DAGstatus.py).
