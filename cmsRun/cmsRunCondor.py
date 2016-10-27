@@ -504,7 +504,14 @@ def get_list_of_files_from_das(dataset, num_files):
 def get_output_files_from_config(cmssw_config_filename):
     """Get any output filenames from the CMSSW config file"""
     import FWCore.ParameterSet.Config as cms
-    # no need to add the dir of the config file - should already be there from scram b
+    # Particularly nasty hack to cope with CMSSW configs that use VarParsing
+    # These read in sys.argv, which of course is tailored for cmsRunCondor,
+    # not cmsRun
+    keep_argv = sys.argv[:]
+    sys.argv = ['cmsRun', cmssw_config_filename]
+    # add the dir of the config file so can import easily
+    cmssw_config_filename = os.path.abspath(cmssw_config_filename)
+    sys.path.append(os.path.dirname(cmssw_config_filename))
     myscript = __import__(os.path.basename(cmssw_config_filename).replace(".py", ""))
     process = myscript.process
     output_files = []
@@ -513,6 +520,9 @@ def get_output_files_from_config(cmssw_config_filename):
         output_files.append(process.TFileService.fileName.value())
     for omod in process.outputModules.itervalues():
         output_files.append(omod.fileName.value())
+    # reset everything as it was before
+    sys.path.remove(os.path.dirname(cmssw_config_filename))
+    sys.argv = keep_argv[:]
     return output_files
 
 
