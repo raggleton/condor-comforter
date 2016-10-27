@@ -292,8 +292,8 @@ def main(in_args=sys.argv[1:]):
     rm_jobs = create_intermediate_cleanup_jobs(inter_hadd_jobs)
 
     if len(rm_jobs) > 0:
-        condor_file = os.path.join(log_dir, "rmInter_{timestamp}.condor".format(**user_dict))
-        log_stem = "rmInter.$(cluster).$(process)"
+        condor_file = os.path.join(log_dir, "rm_{timestamp}.condor".format(**user_dict))
+        log_stem = "rm.$(cluster).$(process)"
 
         rm_jobset = ht.JobSet(exe="hadoop", copy_exe=False,
                               filename=condor_file,
@@ -308,7 +308,16 @@ def main(in_args=sys.argv[1:]):
             rm_jobset.add_job(job)
             hadd_dag.add_job(job, requires=final_hadd_job)
 
-    # TODO: add jobs to remov copies from HDFS if they weren't there originally
+    # add jobs to remove copies from HDFS if they weren't there originally
+    for job_ind, job in enumerate(inter_hadd_jobs):
+        for m_ind, mirror in enumerate(job.input_file_mirrors):
+            if not mirror.original.startswith('/hdfs'):
+                condor_file = os.path.join(log_dir, "rmCopy_{timestamp}.condor".format(**user_dict))
+                log_stem = "rmCopy.$(cluster).$(process)"
+                rm_job = ht.Job(name="rmCopy_%d_%d" % (job_ind, m_ind),
+                                args=" fs -rm -skipTrash %s" % mirror.hdfs.replace("/hdfs", ""))
+                rm_jobset.add_job(rm_job)
+                hadd_dag.add_job(rm_job, requires=job)
 
     # Submit jobs
     hadd_dag.submit()
