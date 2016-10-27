@@ -3,10 +3,6 @@
 """
 Script to allow you to run cmsRun jobs on HTCondor.
 
-See options with:
-
-    cmsRunCondor.py --help
-
 Robin Aggleton 201[5|6]
 """
 
@@ -44,83 +40,108 @@ class ArgParser(argparse.ArgumentParser):
         self.add_arguments()
 
     def add_arguments(self):
-        self.add_argument("--config",
-                          help="CMSSW config file you want to run.",
-                          required=True)
-        self.add_argument("--outputDir",
-                          help="Where you want your output to be stored. "
-                          "Must be on /hdfs.",
-                          required=True)
-        self.add_argument("--useConfig",
-                          help="Use the input files and number of events "
-                          "specified in the config file."
-                          "This will ignore --dataset, totalUnits, unitsPerJob",
-                          action='store_true')
-        self.add_argument("--dataset",
-                          help="Name of dataset you want to run over")
-        self.add_argument("--secondaryDataset",
-                          help="Name of secondary dataset. This allows you to do the "
-                          "'2-file' solution, e.g.to run both RAW and RECO in the "
-                          "same job. The --unitsPerJob and --totalUnits options "
-                          "will then apply to the child dataset (specified with --dataset)")
-        split_group = self.add_mutually_exclusive_group(required=True)
-        split_group.add_argument("--splitByFiles",
-                                 help='Unit = file',
-                                 action='store_true')
-        split_group.add_argument("--splitByLumis",
-                                 help='Unit = lumisection',
-                                 action='store_true')
-        self.add_argument("--unitsPerJob",
+        self.add_argument("config",
+                          help="CMSSW config file you want to run.")
+        bar_length = 79
+        input_group = self.add_argument_group("INPUT\n"+"-"*bar_length,
+                                              'Input source/running mode')
+
+        input_sources = input_group.add_mutually_exclusive_group(required=True)
+        input_sources.add_argument("--dataset",
+                                   help="Name of dataset you want to run over")
+        input_sources.add_argument("--filelist",
+                                   help="Pass in a list of filenames to run over. "
+                                   "This will ignore --dataset/--secondaryDataset/"
+                                   "--lumiMask/--runRange options.")
+        input_sources.add_argument("--useConfig",
+                                   help="Use the input files and number of events "
+                                   "specified in the config file."
+                                   "This will ignore --dataset, totalUnits, unitsPerJob, etc",
+                                   action='store_true')
+
+        debug_text = ('Note that in this mode, it will use the files and '
+                      'number of events in the CMSSW config.'
+                      'You should recompile with `scram b clean; '
+                      'scram b USER_CXXFLAGS="-g"`')
+        input_sources.add_argument('--callgrind',
+                                   help='Profile code using callgrind. ' + debug_text,
+                                   action='store_true')
+        input_sources.add_argument('--valgrind',
+                                   help='Run using valgrind to find memory leaks. ' + debug_text,
+                                   action='store_true')
+
+        other_input_group = self.add_argument_group("Other input source options")
+        other_input_group.add_argument("--secondaryDataset",
+                                       help="Name of secondary dataset. This allows you to do the "
+                                       "'2-file' solution, e.g.to run both RAW and RECO in the "
+                                       "same job. The secondary dataset should be the 'parent'"
+                                       "(e.g. RAW), and the primary dataset should be the 'child'"
+                                       "(e.g. RECO). The --unitsPerJob and --totalUnits options "
+                                       "will then apply to the child dataset "
+                                       "(specified with --dataset)")
+        other_input_group.add_argument('--inputFile',
+                                       help="Additional input file(s) needed by cmsRun.",
+                                       action='append')
+
+        div = self.add_argument_group("Job division",
+                                      "(Required for --dataset|--filelist, ignored otherwise)")
+        div.add_argument("--unitsPerJob",
                           help="Number of units to run over per job.",
                           type=int)
-        self.add_argument("--totalUnits",
+        div.add_argument("--totalUnits",
                           help="Total number of units to run over. "
                           "Default is ALL (-1). Also acceptable is a fraction of "
                           "the whole dataset (0-1), or an integer number of files (>=1).",
                           type=float,
                           default=-1)
-        self.add_argument("--filelist",
-                          help="Pass in a list of filenames to run over. "
-                          "This will ignore --dataset/--lumiMask/--runRange options.")
-        self.add_argument("--outputScript",
-                          help="Name of condor submission script. "
-                          "Default is <config>_<time>.condor, recommended to put it on /storage.")
-        self.add_argument("--verbose", "-v",
-                          help="Extra printout to clog up your screen.",
-                          action='store_true')
-        self.add_argument("--dry",
-                          help="Dry-run: only make condor submission script, "
-                          "don't submit to queue.",
-                          action='store_true')
-        self.add_argument("--dag",
-                          help="Specify DAG filename if you want to run as a condor DAG."
-                          "**Strongly recommended** to put it on /storage",
-                          type=str),
-        self.add_argument('--log',
-                          help="Location to store job stdout/err/log files. "
-                          "Default is $PWD/logs, but would recommend to put it on /storage",
-                          default='logs')
-        self.add_argument('--inputFile',
-                          help="Additional input file(s) needed by cmsRun.",
-                          action='append')
-        self.add_argument('--lumiMask',
+
+        split_group = div.add_mutually_exclusive_group()
+        split_group.add_argument("--splitByFiles",
+                                 help='Unit = file',
+                                 action='store_true')
+        split_group.add_argument("--splitByLumis",
+                                 help='Unit = lumisection. '
+                                 'Not available for --filelist',
+                                 action='store_true')
+
+        filtering = self.add_argument_group("Dataset filtering", "(Only for --dataset)")
+        filtering.add_argument('--lumiMask',
                           help='Specify file or URL with {run:lumisections} to run over')
-        self.add_argument('--runRange',
+        filtering.add_argument('--runRange',
                           help='Specify run number(s) to run over. List, or range '
                           '(or combine). Must be comma separated. '
                           'e.g. 259700,269710-259720')
-        self.add_argument('--callgrind',
-                          help='Run using callgrind. Note that in this mode, '
-                          'it will use the files and # events in the CMSSW config. '
-                          'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
-                          'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
-                          action='store_true')
-        self.add_argument('--valgrind',
-                          help='Run using valgrind to find mem leaks. Note that in this mode, '
-                          'it will use the files and # events in the CMSSW config. '
-                          'You do not need to specify --unitsPerJob, --totalUnits, or --dataset. '
-                          'You should recompile with `scram b clean; scram b USER_CXXFLAGS="-g"`',
-                          action='store_true')
+
+
+        output_group = self.add_argument_group('OUTPUT\n'+'-'*bar_length,
+                                               "Options for outputs")
+
+        output_group.add_argument("--outputDir",
+                                  help="Where you want your output to be stored. "
+                                  "Must be on /hdfs.",
+                                  required=True)
+        output_group.add_argument("--outputScript",
+                                  help="Name of condor submission script. "
+                                  "Default is <config>_<time>.condor, "
+                                  "recommended to put it on /storage.")
+        output_group.add_argument("--dag",
+                                  help="Specify DAG filename if you want to run as a condor DAG."
+                                  "**Strongly recommended** to put it on /storage",
+                                  type=str),
+        output_group.add_argument('--log',
+                                  help="Location to store job stdout/err/log files. "
+                                  "Default is $PWD/logs, but would recommend to put it on /storage",
+                                  default='logs')
+
+        other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
+
+        other_group.add_argument("--verbose", "-v",
+                                 help="Extra printout to clog up your screen.",
+                                 action='store_true')
+        other_group.add_argument("--dry",
+                                 help="Dry-run: only make condor submission script, "
+                                 "don't submit to queue.",
+                                 action='store_true')
 
 
 class DatasetFile(object):
@@ -546,9 +567,7 @@ def remove_file(filename):
 
 
 def flag_mutually_exclusive_args(args, opts_a, opts_b):
-    """Flag mutually exclusive args (i.e can't specify both A and B).
-
-    Each of the opts in opts_a are incompatible with each of the opts in opts_b.
+    """Each of the options in opts_a is incompatible with each of the options in opts_b.
     """
     arg_dict = vars(args)
     for oa, ob in product(opts_a, opts_b):
@@ -557,9 +576,7 @@ def flag_mutually_exclusive_args(args, opts_a, opts_b):
 
 
 def flag_dependent_args(args, opts_a, opts_b):
-    """Flag dependent args (i.e B require A to be set).
-
-    Each of the opts in opts_b requires every opt in opts_a.
+    """Each of the options in opts_b requires every option in opts_a.
     """
     arg_dict = vars(args)
     if all([arg_dict[oa] for oa in opts_a]):
@@ -587,25 +604,23 @@ def check_args(args):
     if not os.path.isfile(args.config):
         raise IOError("Cannot find config file %s" % args.config)
 
-    flag_mutually_exclusive_args(args, ['filelist'], ['dataset', 'splitByLumis'])
+    flag_mutually_exclusive_args(args, ['filelist'], ['splitByLumis', 'lumiMask', 'runRange'])
 
-    # TODO: useConfig ingores lots of other stuff:
+    flag_mutually_exclusive_args(args,
+                                 ['useConfig', 'valgrind', 'callgrind'],
+                                 ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
+                                  'unitsPerJob', 'totalUnits', 'secondaryDataset'])
 
     if args.filelist:
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
 
-    if not args.useConfig and not args.valgrind and not args.callgrind and not args.filelist and not args.dataset:
-        raise RuntimeError('You must specify a dataset or a filelist')
-
     # for now, restrict output dir to /hdfs
     if not args.outputDir.startswith('/hdfs'):
         raise RuntimeError('Output directory (--outputDir) not on /hdfs')
-
-    check_create_dir(args.outputDir,
-                     info_msg="Output directory doesn't exists, "
-                              "making it: %s" % args.outputDir)
+    # Note that htcondenser takes care of directory creation
+    # for condor scipts, dag, logs, output
 
     if args.unitsPerJob > args.totalUnits and args.totalUnits >= 1:
         raise RuntimeError("You can't have unitsPerJob > totalUnits!")
@@ -614,21 +629,11 @@ def check_args(args):
         flag_dependent_args(args, ['dataset'], ['secondaryDataset'])
         log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
 
-    # make an output directory for log files
-    check_create_dir(args.log,
-                     info_msg="Log directory doesn't exist, "
-                              "making it: %s" % args.log)
-
     if args.dag:
-        args.dag = os.path.realpath(args.dag)
-        check_create_dir(os.path.dirname(args.dag),
-                         info_msg="DAG directory doesn't exist, "
-                                  "making it: %s" % os.path.dirname(args.dag))
+        args.dag = os.path.abspath(args.dag)
 
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
-
-    flag_mutually_exclusive_args(args, ['callgrind', 'valgrind'], ['filelist', 'dataset'])
 
 
 def is_url(path):
