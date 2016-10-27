@@ -276,8 +276,8 @@ def main(in_args=sys.argv[1:]):
                             out_dir=os.path.join(log_dir, 'logs'), out_file=log_stem + '.out',
                             err_dir=os.path.join(log_dir, 'logs'), err_file=log_stem + '.err',
                             log_dir=os.path.join(log_dir, 'logs'), log_file=log_stem + '.log',
-                            cpus=1, memory='1GB', disk='1GB',
-                            transfer_hdfs_input=False,
+                            cpus=1, memory='1GB', disk='1.5GB',
+                            transfer_hdfs_input=True,
                             share_exe_setup=True,
                             hdfs_store=os.path.dirname(final_filename))
 
