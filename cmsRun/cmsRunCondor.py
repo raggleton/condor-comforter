@@ -843,8 +843,10 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     args.outputScript = os.path.realpath(args.outputScript)
 
+    script_dir = os.path.dirname(__file__)
+
     cmsrun_jobs = ht.JobSet(
-        exe='cmsRun_worker.sh',
+        exe=os.path.join(script_dir, 'cmsRun_worker.sh'),
         copy_exe=True,
         filename=args.outputScript,
         out_dir=args.log, out_file='cmsRun.$(cluster).$(process).out',
