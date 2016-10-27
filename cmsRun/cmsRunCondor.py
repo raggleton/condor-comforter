@@ -120,18 +120,26 @@ class ArgParser(argparse.ArgumentParser):
                                   help="Where you want your output to be stored. "
                                   "Must be on /hdfs.",
                                   required=True)
+        user_dict = {
+            'username': os.environ['LOGNAME'],
+            'datestamp': strftime("%d_%b_%y"),
+            'timestamp': strftime("%H%M%S")
+        }
         output_group.add_argument("--outputScript",
                                   help="Name of condor submission script. "
-                                  "Default is <config>_<time>.condor, "
-                                  "recommended to put it on /storage.")
+                                  "Should be on /storage or /scratch",
+                                  default=generate_script_filename(user_dict))
         output_group.add_argument("--dag",
-                                  help="Specify DAG filename if you want to run as a condor DAG."
-                                  "**Strongly recommended** to put it on /storage",
-                                  type=str),
+                                  help="Specify DAG filename if you want to run as a condor DAG. "
+                                  "Should be on /storage or /scratch. "
+                                  "Will auto-generate DAG filename "
+                                  "if no argument specified (%s)" % generate_dag_filename(user_dict),
+                                  nargs='?',
+                                  const=generate_dag_filename(user_dict))
         output_group.add_argument('--log',
                                   help="Location to store job stdout/err/log files. "
-                                  "Default is $PWD/logs, but would recommend to put it on /storage",
-                                  default='logs')
+                                  "Should be on /storage or /scratch",
+                                  default=generate_log_dir(user_dict))
 
         other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
 
@@ -142,6 +150,102 @@ class ArgParser(argparse.ArgumentParser):
                                  help="Dry-run: only make condor submission script, "
                                  "don't submit to queue.",
                                  action='store_true')
+
+
+def generate_script_filename(user_dict):
+    return '/storage/{username}/cmsRunCondor/{datestamp}/cmsRunCondor_{timestamp}.condor'.format(**user_dict)
+
+
+def generate_dag_filename(user_dict):
+    return '/storage/{username}/cmsRunCondor/{datestamp}/cmsRunCondor_{timestamp}.dag'.format(**user_dict)
+
+
+def generate_log_dir(user_dict):
+    return '/storage/{username}/cmsRunCondor/{datestamp}/logs'.format(**user_dict)
+
+
+def flag_mutually_exclusive_args(args, opts_a, opts_b):
+    """Ensure each of the options in opts_a is incompatible with each of the options in opts_b."""
+    arg_dict = vars(args)
+    for oa, ob in product(opts_a, opts_b):
+        if arg_dict[oa] and arg_dict[ob]:
+            raise RuntimeError("Cannot specify both --%s and --%s" % (oa, ob))
+
+
+def flag_dependent_args(args, opts_a, opts_b):
+    """Each of the options in opts_b requires every option in opts_a."""
+    arg_dict = vars(args)
+    if all([arg_dict[oa] for oa in opts_a]):
+        for ob in opts_b:
+            if not arg_dict[ob]:
+                raise RuntimeError("--%s requires %s" % (oa, ob))
+
+
+def check_args(args):
+    """Check program arguments.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Args to check
+
+    Raises
+    ------
+    IOError
+        If it cannot find config file or filelist (if one specified)
+    RuntimeError
+        If outputDir not on HDFS, or incorrect --unitsPerJob
+
+    """
+    if not os.path.isfile(args.config):
+        raise IOError("Cannot find config file %s" % args.config)
+
+    flag_mutually_exclusive_args(args, ['filelist'], ['splitByLumis', 'lumiMask', 'runRange'])
+
+    flag_mutually_exclusive_args(args,
+                                 ['useConfig', 'valgrind', 'callgrind'],
+                                 ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
+                                  'unitsPerJob', 'totalUnits', 'secondaryDataset'])
+
+    args.outputScript = os.path.abspath(args.outputScript)
+
+    if args.filelist:
+        args.filelist = os.path.abspath(args.filelist)
+        if not os.path.isfile(args.filelist):
+            raise IOError("Cannot find filelist %s" % args.filelist)
+
+    # for now, restrict output dir to /hdfs
+    if not args.outputDir.startswith('/hdfs'):
+        raise RuntimeError('Output directory (--outputDir) not on /hdfs')
+    # Note that htcondenser takes care of directory creation
+    # for condor scipts, dag, logs, output
+
+    if args.unitsPerJob > args.totalUnits and args.totalUnits >= 1:
+        raise RuntimeError("You can't have unitsPerJob > totalUnits!")
+
+    if args.secondaryDataset:
+        flag_dependent_args(args, ['dataset'], ['secondaryDataset'])
+        log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
+
+    args.outputScript = os.path.abspath(args.outputScript)
+    args.log = os.path.abspath(args.log)
+
+    if args.dag:
+        args.dag = os.path.abspath(args.dag)
+
+    if args.lumiMask and not is_url(args.lumiMask):
+        args.lumiMask = os.path.abspath(args.lumiMask)
+
+    for f in [args.outputScript, args.dag, args.log]:
+        if f:
+            if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
+                raise IOError("You cannot put %s on /users or /hdfs", f)
+
+
+def is_url(path):
+    """Test if path is URL or not"""
+    # this is a pretty crap test, can do better?
+    return path.startswith('http') or path.startswith('www')
 
 
 class DatasetFile(object):
@@ -566,82 +670,6 @@ def remove_file(filename):
             os.remove(filename)
 
 
-def flag_mutually_exclusive_args(args, opts_a, opts_b):
-    """Each of the options in opts_a is incompatible with each of the options in opts_b.
-    """
-    arg_dict = vars(args)
-    for oa, ob in product(opts_a, opts_b):
-        if arg_dict[oa] and arg_dict[ob]:
-            raise RuntimeError("Cannot specify both --%s and --%s" % (oa, ob))
-
-
-def flag_dependent_args(args, opts_a, opts_b):
-    """Each of the options in opts_b requires every option in opts_a.
-    """
-    arg_dict = vars(args)
-    if all([arg_dict[oa] for oa in opts_a]):
-        for ob in opts_b:
-            if not arg_dict[ob]:
-                raise RuntimeError("--%s requires %s" % (oa, ob))
-
-
-def check_args(args):
-    """Check program arguments.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Args to check
-
-    Raises
-    ------
-    IOError
-        If it cannot find config file or filelist (if one specified)
-    RuntimeError
-        If outputDir not on HDFS, or incorrect --unitsPerJob
-
-    """
-    if not os.path.isfile(args.config):
-        raise IOError("Cannot find config file %s" % args.config)
-
-    flag_mutually_exclusive_args(args, ['filelist'], ['splitByLumis', 'lumiMask', 'runRange'])
-
-    flag_mutually_exclusive_args(args,
-                                 ['useConfig', 'valgrind', 'callgrind'],
-                                 ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
-                                  'unitsPerJob', 'totalUnits', 'secondaryDataset'])
-
-    if args.filelist:
-        args.filelist = os.path.abspath(args.filelist)
-        if not os.path.isfile(args.filelist):
-            raise IOError("Cannot find filelist %s" % args.filelist)
-
-    # for now, restrict output dir to /hdfs
-    if not args.outputDir.startswith('/hdfs'):
-        raise RuntimeError('Output directory (--outputDir) not on /hdfs')
-    # Note that htcondenser takes care of directory creation
-    # for condor scipts, dag, logs, output
-
-    if args.unitsPerJob > args.totalUnits and args.totalUnits >= 1:
-        raise RuntimeError("You can't have unitsPerJob > totalUnits!")
-
-    if args.secondaryDataset:
-        flag_dependent_args(args, ['dataset'], ['secondaryDataset'])
-        log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
-
-    if args.dag:
-        args.dag = os.path.abspath(args.dag)
-
-    if args.lumiMask and not is_url(args.lumiMask):
-        args.lumiMask = os.path.abspath(args.lumiMask)
-
-
-def is_url(path):
-    """Test if path is URL or not"""
-    # this is a pretty crap test, can do better?
-    return path.startswith('http') or path.startswith('www')
-
-
 def setup_lumi_mask(lumi_mask_source):
     """Produce LumiList.LumiList from lumi_mask_source.
 
@@ -837,17 +865,6 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     ###########################################################################
     # Create Jobs
     ###########################################################################
-    if not args.outputScript:
-        args.outputScript = '/storage/{0}/cmsRunCondor/{1}/{2}_{3}.condor'.format(
-            os.environ['LOGNAME'],
-            strftime("%d_%b_%y"),
-            os.path.basename(args.config).replace(".py", ""),
-            strftime("%H%M%S"))
-        log.warning("You did not specify a condor output script. "
-                    "Auto-generated one at: %s". args.outputScript)
-
-    args.outputScript = os.path.realpath(args.outputScript)
-
     script_dir = os.path.dirname(__file__)
 
     cmsrun_jobs = ht.JobSet(
