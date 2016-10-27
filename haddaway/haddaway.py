@@ -5,7 +5,10 @@ Script and modules to perform more efficient hadd-ing using HTCondor.
 
 Requires htcondenser
 
+TODO:
 
+- clever RAM/disk requirements using estimate
+- recursive algo - avoid hardcoding in just 2 layers - somehow allow for maximum?
 
 [Refers to either the 80s classic "What is love",
 or the more modern "Hideaway" by Kiesza.]
@@ -49,7 +52,6 @@ class ArgParser(argparse.ArgumentParser):
 
         self.add_argument("--inputList",
                           help="Text file with list of input files")
-
         self.add_argument("--input",
                           nargs="+",
                           help="Input file[s]")
@@ -62,6 +64,7 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument("--verbose", "-v",
                           help="Extra printout to clog up your screen.",
                           action='store_true')
+
 
 def check_hadd_exists():
     hadd_path = find_executable("hadd")
@@ -212,6 +215,9 @@ def main(in_args=sys.argv[1:]):
     # Check hadd exists
     check_hadd_exists()
 
+    if not args.input and not args.inputList:
+        raise RuntimeError("Need to specify --input or --inputFiles")
+
     final_filename = args.output
     if not final_filename.startswith("/hdfs"):
         raise RuntimeError("Output file MUST be on HDFS")
@@ -230,14 +236,14 @@ def main(in_args=sys.argv[1:]):
     if len(input_files) < 2:
         raise RuntimeError("Fewer than 2 input files - hadd not needed")
 
-    log.debug('Input:', input_files)
-
     # sanitise paths, check existance
     for i, f in enumerate(input_files):
         input_files[i] = os.path.abspath(f).strip().strip("\n").strip()
         if not os.path.isfile(input_files[i]):
             raise IOError("Input %s does not exist" % input_files[i])
-    # exit()
+
+    log.debug('Input:', input_files)
+
     # Arrange into jobs
     group_size = args.size
     hadd_file_groups = arrange_hadd_files(input_files, group_size)
