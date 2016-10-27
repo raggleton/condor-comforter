@@ -51,6 +51,11 @@ class ArgParser(argparse.ArgumentParser):
                           help="Where you want your output to be stored. "
                           "Must be on /hdfs.",
                           required=True)
+        self.add_argument("--useConfig",
+                          help="Use the input files and number of events "
+                          "specified in the config file."
+                          "This will ignore --dataset, totalUnits, unitsPerJob",
+                          action='store_true')
         self.add_argument("--dataset",
                           help="Name of dataset you want to run over")
         self.add_argument("--secondaryDataset",
@@ -574,12 +579,14 @@ def check_args(args):
 
     flag_mutually_exclusive_args(args, ['filelist'], ['dataset', 'splitByLumis'])
 
+    # TODO: useConfig ingores lots of other stuff:
+
     if args.filelist:
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
 
-    if not args.valgrind and not args.callgrind and not args.filelist and not args.dataset:
+    if not args.useConfig and not args.valgrind and not args.callgrind and not args.filelist and not args.dataset:
         raise RuntimeError('You must specify a dataset or a filelist')
 
     # for now, restrict output dir to /hdfs
@@ -700,7 +707,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     # This could probably be done better!
 
-    if not args.valgrind and not args.callgrind:
+    if not args.valgrind and not args.callgrind and not args.useConfig:
         list_of_files, list_of_secondary_files = None, None
         list_of_lumis = None
 
@@ -802,6 +809,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             job_name = "callgrind"
         elif args.valgrind:
             job_name = "valgrind"
+        elif args.useConfig:
+            job_name = "cmsRun_%s" % strftime("%H%M%S")
         else:
             job_name = args.dataset[1:].replace("/", "_").replace("-", "_")
 
@@ -854,6 +863,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 args_str += ' -l ' + os.path.basename(lumilist_filename)
             elif is_url(args.lumiMask):
                 args_str += ' -l ' + args.lumiMask
+        if args.useConfig:
+            args_str += ' -u'
         if args.valgrind:
             args_str += ' -m'
         if args.callgrind:

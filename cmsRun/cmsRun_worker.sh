@@ -33,7 +33,7 @@ doCallgrind=0  # do profiling - runs with callgrind
 doValgrind=0  # do memcheck - runs with valgrind
 lumiMaskSrc=""  # filename or URL for lumi mask
 lumiMaskType="filename"  # source type (filename or url)
-while getopts ":s:f:o:i:a:c:r:p:m:l:" opt; do
+while getopts ":s:f:o:i:a:c:r:upml:" opt; do
     case $opt in
         \?)
             echo "Invalid option $OPTARG" >&2
@@ -70,6 +70,10 @@ while getopts ":s:f:o:i:a:c:r:p:m:l:" opt; do
         r)
             echo "Job framework report XML: $OPTARG"
             reportFile=$OPTARG
+            ;;
+        u)
+            echo "Using files in config"
+            overrideConfig=0
             ;;
         p)
             echo "Running callgrind profiling"
