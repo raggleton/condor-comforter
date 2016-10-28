@@ -877,7 +877,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         cpus=1, memory='2GB', disk='3GB',
         # cpus=1, memory='1GB', disk='500MB',
         certificate=True,
-        transfer_hdfs_input=False,
+        transfer_hdfs_input=True,
         share_exe_setup=True,
         common_input_files=[sandbox_local],  # EVERYTHING should be in the sandbox
         hdfs_store=args.outputDir
