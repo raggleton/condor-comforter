@@ -932,28 +932,17 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         else:
             cmsrun_jobs.submit()
 
-    ###########################################################################
-    # Cleanup local files
-    ###########################################################################
-    remove_file(sandbox_local)
-    if filelist_filename:
-        remove_file(filelist_filename)
-    if lumilist_filename:
-        remove_file(lumilist_filename)
+        # Cleanup local files
+        remove_file(sandbox_local)
+        if filelist_filename:
+            remove_file(filelist_filename)
+        if lumilist_filename:
+            remove_file(lumilist_filename)
 
     ###########################################################################
     # Return job properties
     ###########################################################################
-    return cmsrun_dag, cmsrun_jobs, dict(
-                dataset=args.dataset,
-                jobFile=args.outputScript,
-                totalNumJobs=total_num_jobs,
-                totaNumFiles=args.totalUnits,
-                unitsPerJob=args.unitsPerJob,
-                fileList=filelist_filename,
-                config=args.config,
-                condorScript=args.outputScript
-                )
+    return cmsrun_dag, cmsrun_jobs
 
 
 if __name__ == "__main__":
