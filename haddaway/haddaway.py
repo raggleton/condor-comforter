@@ -130,13 +130,15 @@ def rand_str(length=3):
                    for _ in range(length))
 
 
-def create_hadd_jobs(hadd_file_groups, final_filename, hadd_args=None):
+def create_hadd_jobs(input_files, group_size, final_filename, hadd_args=None):
     """Create htcondenser.Job objects for intermediate and final hadd jobs.
 
     Parameters
     ----------
-    hadd_file_groups : list[list[str]]
-        List of groups of input files
+    input_files : list[str]
+        List of input files
+    group_size : int
+        Size of each intermediate hadd job
     final_filename : str
         Final filename
     hadd_args : str, optional
@@ -148,12 +150,14 @@ def create_hadd_jobs(hadd_file_groups, final_filename, hadd_args=None):
         List of intermediate jobs, and a final hadd job
 
     """
+    hadd_file_groups = arrange_hadd_files(input_files, group_size)
+
     hadd_args = hadd_args or ""
 
     inter_jobs = []
-    final_file_input = hadd_file_groups[0]
+    final_file_input = hadd_file_groups[0]  # when only 1 intermediate job
 
-    # add intermediate files
+    # add intermediate files if needed
     if len(hadd_file_groups) > 1:
         final_file_input = []
 
@@ -245,10 +249,7 @@ def main(in_args=sys.argv[1:]):
     log.debug('Input:', input_files)
 
     # Arrange into jobs
-    group_size = args.size
-    hadd_file_groups = arrange_hadd_files(input_files, group_size)
-
-    inter_hadd_jobs, final_hadd_job = create_hadd_jobs(hadd_file_groups, final_filename, hadd_args=args.haddArgs)
+    inter_hadd_jobs, final_hadd_job = create_hadd_jobs(input_files, args.size, final_filename, hadd_args=args.haddArgs)
 
     log.info("Creating %d intermediate jobs", len(inter_hadd_jobs))
 
@@ -286,7 +287,7 @@ def main(in_args=sys.argv[1:]):
         hadd_dag.add_job(job)
 
     hadd_jobset.add_job(final_hadd_job)
-    hadd_dag.add_job(final_hadd_job, requires=inter_hadd_jobs)
+    hadd_dag.add_job(final_hadd_job, requires=inter_hadd_jobs if inter_hadd_jobs else None)
 
     # Add removal jobs if necessary
     rm_jobs = create_intermediate_cleanup_jobs(inter_hadd_jobs)
