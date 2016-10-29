@@ -7,9 +7,10 @@
 # - setups up environment & CMSSW
 # - extracts all the user's libs, header files, etc from a sandbox zip
 # - makes a wrapper script for the CMSSW config file,
-# so that it uses the correct input/output files
+#   so that it uses the correct input/output files
 # - runs cmsRun
-# - moves the output to /hdfs
+#
+# htondenser takes care of moving files in/out
 ###############################################################################
 
 echo "START: $(date)"
@@ -193,37 +194,6 @@ if [ "$cmsResult" -ne 0 ]; then
 fi
 echo "In" $PWD ":"
 ls -l
-
-###############################################################################
-# Copy across to output directory.
-# Check if hdfs or not.
-# Don't need /hdfs bit when using hadoop tools
-###############################################################################
-# for f in $(find . -name "*.root" -maxdepth 1)
-# do
-#     output=$(basename $f)
-#     echo "Copying $output to $outputDir"
-#     if [[ "$outputDir" == /hdfs* ]]; then
-#         hadoop fs -copyFromLocal -f $output ${outputDir///hdfs}/$output
-#     elif [[ "$outputDir" == /storage* ]]; then
-#         cp $output $outputDir
-#     fi
-# done
-
-# # Copy framework report
-# hadoop fs -copyFromLocal -f $reportFile ${outputDir///hdfs}/$reportFile
-
-# Copy callgrind output
-# for f in $(find . -name "callgrind.out.*")
-# do
-#     output=$(basename $f)
-#     echo "Copying $output to $outputDir"
-#     if [[ "$outputDir" == /hdfs/* ]]; then
-#         hadoop fs -copyFromLocal -f $output ${outputDir///hdfs}/$output
-#     elif [[ "$outputDir" == /storage* ]]; then
-#         cp $output $outputDir
-#     fi
-# done
 
 echo "END: $(date)"
 
