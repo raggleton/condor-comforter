@@ -26,6 +26,12 @@ import htcondenser as ht
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# For auto-generated filenames, etc
+USER_DICT = {
+    'username': os.environ['LOGNAME'],
+    'datestamp': strftime("%d_%b_%y"),
+    'timestamp': strftime("%H%M%S")
+}
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
                       argparse.RawDescriptionHelpFormatter):
@@ -120,26 +126,21 @@ class ArgParser(argparse.ArgumentParser):
                                   help="Where you want your output to be stored. "
                                   "Must be on /hdfs.",
                                   required=True)
-        user_dict = {
-            'username': os.environ['LOGNAME'],
-            'datestamp': strftime("%d_%b_%y"),
-            'timestamp': strftime("%H%M%S")
-        }
         output_group.add_argument("--outputScript",
                                   help="Name of condor submission script. "
                                   "Should be on /storage or /scratch",
-                                  default=generate_script_filename(user_dict))
+                                  default=generate_script_filename(USER_DICT))
         output_group.add_argument("--dag",
                                   help="Specify DAG filename if you want to run as a condor DAG. "
                                   "Should be on /storage or /scratch. "
                                   "Will auto-generate DAG filename "
-                                  "if no argument specified (%s)" % generate_dag_filename(user_dict),
+                                  "if no argument specified (%s)" % generate_dag_filename(USER_DICT),
                                   nargs='?',
-                                  const=generate_dag_filename(user_dict))
+                                  const=generate_dag_filename(USER_DICT))
         output_group.add_argument('--log',
                                   help="Location to store job stdout/err/log files. "
                                   "Should be on /storage or /scratch",
-                                  default=generate_log_dir(user_dict))
+                                  default=generate_log_dir(USER_DICT))
 
         other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
 
@@ -168,7 +169,9 @@ def flag_mutually_exclusive_args(args, opts_a, opts_b):
     """Ensure each of the options in opts_a is incompatible with each of the options in opts_b."""
     arg_dict = vars(args)
     for oa, ob in product(opts_a, opts_b):
-        if arg_dict[oa] and arg_dict[ob]:
+        # if arg_dict[oa] and arg_dict[ob]:
+        # to get around default args e.g. totalUnits
+        if ('--'+oa in sys.argv and '--'+ob in sys.argv):
             raise RuntimeError("Cannot specify both --%s and --%s" % (oa, ob))
 
 
@@ -240,6 +243,15 @@ def check_args(args):
         if f:
             if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
                 raise IOError("You cannot put %s on /users or /hdfs", f)
+
+    if '--outputScript' not in sys.argv:
+        log.warning("You didn't specify a condor script, auto-generated one at %s", generate_script_filename(USER_DICT))
+
+    if '--log' not in sys.argv:
+        log.warning("You didn't specify a log directory, auto-generated one at %s", generate_log_dir(USER_DICT))
+
+    if '--dag' in sys.argv:
+        log.warning("You didn't specify a DAG filename, auto-generated one at %s", generate_dag_filename(USER_DICT))
 
 
 def is_url(path):
