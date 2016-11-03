@@ -1,11 +1,8 @@
 # condor-comforter
 Helper routines for using condor at Bristol, particularly aimed at CMS users.
-
-These will probably be a little hacky, but should offer some inspiration for other users.
+Most things require the [`htcondenser`](https://github.com/raggleton/htcondenser) Python package.
 
 Please report any issues, and add any helpful scripts for other users!
-
-Most things require the [`htcondenser`](https://github.com/raggleton/htcondenser) Python package.
 
 Robin Aggleton
 
@@ -18,15 +15,14 @@ pip install -U --user git+https://github.com/BristolComputing/condor-comforter.g
 ```
 The same command can also be used to update the package.
 
-After this, `cmsRunCondor.py` and `haddawy.py` should be available like any other command.
+After this, `cmsRunCondor.py` and `haddaway.py` should be available like any other command.
 One can also import them as python modules for further extension.
+
+For possible arguments, do `cmsRunCondor.py -h` or `haddaway.py -h`
 
 ##cmsRunCondor
 
-This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
-Only supports output to `/hdfs`.
-
-Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one dataset with a config file.
+This runs `cmsRun` jobs on HTCondor (like CRAB3), outputting to `/hdfs`.
 
 Brief example (_requires CMSSW 80X release_):
 
@@ -38,9 +34,7 @@ cmsRunCondor.py pset_tutorial_analysis.py \
 --dag
 ```
 
-You can then monitor job progress with `DAGstatus` (part of `htcondenser` package)
-
-See all options by doing `cmsRunCondor.py --help`.
+You can then monitor job progress with `DAGstatus` (part of [`htcondenser`](https://github.com/raggleton/htcondenser) package)
 
 Features currently supported:
 
@@ -52,7 +46,7 @@ Features currently supported:
 
 - Run with a secondary dataset to do "2-file solution" (e.g. mixing RECO with RAW)
 
-- Run with a specified list of files
+- Run with a specified list of files instead of a dataset
 
 - Specify additional input files needed for running (e.g. calibration files)
 
@@ -60,12 +54,12 @@ Features currently supported:
 
 - Profile cmsRun jobs with valgrind or callgrind
 
+- Just run with whatever is in your config (e.g. to stop hogging resources on `soolin`)
+
 ##haddaway
 
-Simple script to put `hadd` jobs onto HTCondor, splitting them up into smaller parallel groups to speed things up (possibly).
-
+Simple script to perform `hadd` jobs on HTCondor, splitting them up into smaller parallel groups to speed things up (possibly, YMMV).
 It creates a series of intermediate hadd jobs, then does a final hadd over all of the intermediate files.
-
 You can specify the intermediate group size, and also specify the standard hadd options (e.g. for compression).
 
 Example usage:
