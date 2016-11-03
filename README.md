@@ -9,6 +9,18 @@ Most things require the [`htcondenser`](https://github.com/raggleton/htcondenser
 
 Robin Aggleton
 
+## Installation
+
+Easiest way is via `pip`. If you don't have `pip`, you can use the one in `/software/miniconda/bin/pip`.
+
+```
+pip install -U --user git+https://github.com/BristolComputing/condor-comforter.git@setup
+```
+The same command can also be used to update the package.
+
+After this, `cmsRunCondor.py` and `haddawy.py` should be available like any other command.
+One can also import them as python modules for further extension.
+
 ##cmsRunCondor
 
 This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
