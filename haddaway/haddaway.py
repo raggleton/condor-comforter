@@ -207,7 +207,7 @@ def create_intermediate_cleanup_jobs(inter_hadd_jobs):
     return rm_jobs
 
 
-def main(in_args=sys.argv[1:]):
+def haddaway(in_args=sys.argv[1:]):
     parser = ArgParser(description=__doc__, formatter_class=CustomFormatter)
     args = parser.parse_args(args=in_args)
 
@@ -327,4 +327,4 @@ def main(in_args=sys.argv[1:]):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(haddaway())
