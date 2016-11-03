@@ -197,4 +197,4 @@ ls -l
 
 echo "END: $(date)"
 
-exit $?
+exit 0
