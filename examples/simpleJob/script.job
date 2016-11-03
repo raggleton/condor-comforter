@@ -1,3 +1,12 @@
+# This is a very simple 2 job example
+#
+# Submit it with:
+# condor_submit script.job
+#
+# Check status with condor_q $LOGNAME
+#
+# Note that in general you should NOT have job files on /users!
+#
 Executable = job.sh
 Universe = vanilla
 Output = script.job.$(cluster).$(process).out
