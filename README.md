@@ -5,18 +5,18 @@ These will probably be a little hacky, but should offer some inspiration for oth
 
 Please report any issues, and add any helpful scripts for other users!
 
-Most things require [`htcondenser`](https://github.com/raggleton/htcondenser).
+Most things require the [`htcondenser`](https://github.com/raggleton/htcondenser) Python package.
 
 Robin Aggleton
 
 ##cmsRunCondor
 
 This holds example code for running CMSSW jobs on condor. Like CRAB3, but on condor.
-Currently only supports output to `/hdfs`.
+Only supports output to `/hdfs`.
 
 Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one dataset with a config file.
 
-Brief example **requires CMSSW 80X release**:
+Brief example (_requires CMSSW 80X release_):
 
 ```
 ./cmsRunCondor.py pset_tutorial_analysis.py \
@@ -26,7 +26,7 @@ Brief example **requires CMSSW 80X release**:
 --dag
 ```
 
-You can then monitor job progress with `DAGstatus.py` (part of `htcondenser` package)
+You can then monitor job progress with `DAGstatus` (part of `htcondenser` package)
 
 See all options by doing `cmsRunCondor.py --help`.
 
@@ -50,19 +50,28 @@ Features currently supported:
 
 ##haddaway
 
-Simple script to put `hadd` jobs onto HTCondor, splitting them up into smaller parallel groups.
+Simple script to put `hadd` jobs onto HTCondor, splitting them up into smaller parallel groups to speed things up (possibly).
 
-##exampleDAG
+It creates a series of intermediate hadd jobs, then does a final hadd over all of the intermediate files.
+
+You can specify the intermediate group size, and also specify the standard hadd options (e.g. for compression).
+
+##examples
+
+There are 2 simple condor job examples included, one for a single job, another for a DAG.
+Note that these are only for reference/a basic understanding of how htcondor operates.
+For your own work, I would recommended using the [`htcondenser`](https://github.com/raggleton/htcondenser) package to avoid ever having to write these, and solving other hassles.
+
+###simpleJob
+
+A very simple condor job file to run a script on the worker node.
+
+Start from: [script.job](examples/simpleJob/script.job)
+
+###exampleDAG
 
 This holds a simple example of a DAG (directed acyclic graph), i.e. a nice way to schedule various jobs, each of which can depend on other jobs.
 It shows how to setup and 'connect' jobs with parent-child relationships, and how to pass variables to the condor job file.
 
-Start from: [diamond.dag](exampleDAG/diamond.dag)
+Start from: [diamond.dag](examples/exampleDAG/diamond.dag)
 
-Also includes a neat little monitoring script for DAG jobs, [DAGstatus.py](exampleDAG/DAGstatus.py)
-
-##simpleJob
-
-A very simple condor job file to run a script on the worker node.
-
-Start from: [script.job](simpleJob/script.job)
