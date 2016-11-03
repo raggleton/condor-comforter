@@ -31,7 +31,7 @@ Start from: [cmsRunCondor.py](cmsRun/cmsRunCondor.py) for running over one datas
 Brief example (_requires CMSSW 80X release_):
 
 ```
-./cmsRunCondor.py pset_tutorial_analysis.py \
+cmsRunCondor.py pset_tutorial_analysis.py \
 --dataset /QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/MINIAODSIM \
 --totalUnits 10 --unitsPerJob 5 --splitByFiles \
 --outputDir /hdfs/user/$LOGNAME/cmsRunCondor \
@@ -67,6 +67,16 @@ Simple script to put `hadd` jobs onto HTCondor, splitting them up into smaller p
 It creates a series of intermediate hadd jobs, then does a final hadd over all of the intermediate files.
 
 You can specify the intermediate group size, and also specify the standard hadd options (e.g. for compression).
+
+Example usage:
+
+```
+# passing the input filenames
+haddaway.py --output final.root --size 3 --input file1.root file2.root file3.root --haddArgs="-f7"
+
+# passing a text file (filelist.txt) with locations of files
+haddaway.py --output final.root --size 3 --inputList filelist.txt --haddArgs="-f7"
+```
 
 ##examples
 
