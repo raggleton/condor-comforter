@@ -952,7 +952,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             name='cmsRun_%d' % job_ind,
             args=args_str,
             input_files=None,
-            output_files=['CMSSW_*/src/'+ j for j in job_output_files],  # worker script operates in CMSSW/src
+            # need the CMSSW_*/src since the output is produced there
+            output_files=[os.path.join(os.environ['CMSSW_VERSION'], 'src', j) for j in job_output_files],
             hdfs_mirror_dir=args.outputDir
         )
 
