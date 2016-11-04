@@ -21,6 +21,7 @@ from itertools import izip_longest, izip, product
 import FWCore.PythonUtilities.LumiList as LumiList
 
 import htcondenser as ht
+import haddaway
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -142,8 +143,18 @@ class ArgParser(argparse.ArgumentParser):
                                   "Should be on /storage or /scratch",
                                   default=generate_log_dir(USER_DICT))
 
-        other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
+        hadd_group = self.add_argument_group("HADD-ing\n"+'-'*bar_length,
+                                             "Optional post-processing hadd jobs")
+        hadd_group.add_argument("--hadd",
+                                help="Specify the output module whose output "
+                                "files should be hadded afterwards, e.g. TFileService."
+                                "Requires --dag")
+        hadd_group.add_argument("--haddSize", type=int, default=5,
+                                 help="Group size for hadding")
+        hadd_group.add_argument("--haddArgs",
+                                 help='Additional args to pass to hadd, e.g. --haddArgs="-f7"')
 
+        other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
         other_group.add_argument("--verbose", "-v",
                                  help="Extra printout to clog up your screen.",
                                  action='store_true')
@@ -647,8 +658,10 @@ def get_list_of_files_from_das(dataset, num_files):
     return files
 
 
-def get_output_files_from_config(cmssw_config_filename):
-    """Get any output filenames from the CMSSW config file"""
+def get_output_file_dict_from_config(cmssw_config_filename):
+    """Get any output filenames from the CMSSW config file
+    Returns dict with key as module name, values is filename.
+    """
     import FWCore.ParameterSet.Config as cms
     # Particularly nasty hack to cope with CMSSW configs that use VarParsing
     # These read in sys.argv, which of course is tailored for cmsRunCondor,
@@ -660,16 +673,16 @@ def get_output_files_from_config(cmssw_config_filename):
     sys.path.append(os.path.dirname(cmssw_config_filename))
     myscript = __import__(os.path.basename(cmssw_config_filename).replace(".py", ""))
     process = myscript.process
-    output_files = []
+    output_dict = {}
     # do separately for TFileService as not an outputModule
     if hasattr(process, 'TFileService'):
-        output_files.append(process.TFileService.fileName.value())
-    for omod in process.outputModules.itervalues():
-        output_files.append(omod.fileName.value())
+        output_dict['TFileService'] = process.TFileService.fileName.value()
+    for name, omod in process.outputModules.iteritems():
+        output_dict[name] = omod.fileName.value()
     # reset everything as it was before
     sys.path.remove(os.path.dirname(cmssw_config_filename))
     sys.argv = keep_argv[:]
-    return output_files
+    return output_dict
 
 
 def check_create_dir(dirname, info_msg=None, debug_msg=None):
@@ -904,7 +917,11 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         hdfs_store=args.outputDir
     )
 
-    output_files = get_output_files_from_config(args.config)
+    output_file_dict = get_output_file_dict_from_config(args.config)
+    log.debug('Output module/file dict: %s', output_file_dict)
+
+    # this is rather ugly - better way?
+    job_output_dicts = [] # store list of {job, output filename for each output module}
 
     for job_ind in xrange(total_num_jobs):
         # Construct args to pass to cmsRun_worker.sh on the worker node
@@ -926,7 +943,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             args_str += ' -p'
 
         # warning: this must be aligned with whatever cmsRun_worker.sh does...
-        job_output_files = [o.replace('.root', '_%d.root' % job_ind) for o in output_files]
+        job_output_files = [o.replace('.root', '_%d.root' % job_ind) for o in output_file_dict.values()]
         job_output_files.append(report_filename)
 
         if args.callgrind or args.valgrind:
@@ -943,6 +960,74 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         cmsrun_jobs.add_job(job)
         if cmsrun_dag is not None:
             cmsrun_dag.add_job(job, retry=5)
+
+        job_dict = {"job": job}
+        job_dict.update({module: os.path.join(args.outputDir, ofile)
+                         for module, ofile
+                         in zip(output_file_dict.keys(), job_output_files)})
+        job_output_dicts.append(job_dict)
+
+    log.debug('Job output dicts: %s', job_output_dicts)
+
+    ###########################################################################
+    # Add hadd jobs if necessary
+    ###########################################################################
+    if args.hadd:
+        if args.hadd not in output_file_dict:
+            log.warning("%s module not in CMSSW config - will not be hadding" % args.hadd)
+        else:
+            log.info("Creating hadding jobs for output from process.%s", args.hadd)
+            input_files = [d[args.hadd] for d in job_output_dicts]
+            final_filename = os.path.join(args.outputDir,
+                                          output_file_dict[args.hadd].replace('.root', '_final.root'))
+            inter_hadd_jobs, final_hadd_job = haddaway.create_hadd_jobs(input_files,
+                                                                        args.haddSize,
+                                                                        final_filename,
+                                                                        hadd_args=args.haddArgs)
+
+            script_dir = os.path.dirname(args.outputScript)
+            hadd_condor_file = os.path.join(script_dir, "hadd_{timestamp}.condor".format(**USER_DICT))
+            log_stem = "hadd.$(cluster).$(process)"
+            hadd_jobset = ht.JobSet(exe='hadd', copy_exe=False,
+                                    filename=hadd_condor_file,
+                                    out_dir=args.log, out_file=log_stem + '.out',
+                                    err_dir=args.log, err_file=log_stem + '.err',
+                                    log_dir=args.log, log_file=log_stem + '.log',
+                                    cpus=1, memory='1GB', disk='1.5GB',
+                                    transfer_hdfs_input=False,
+                                    share_exe_setup=True,
+                                    hdfs_store=args.outputDir)
+
+            for job in inter_hadd_jobs:
+                hadd_jobset.add_job(job)
+                cms_jobs = [d['job'] for d in job_output_dicts
+                            if d[args.hadd] in job.input_files]
+                print cms_jobs
+                # use retry=2 to allow for hadoop failures, but any more than
+                # that and something is suspect
+                cmsrun_dag.add_job(job, requires=cms_jobs, retry=2)
+
+            hadd_jobset.add_job(final_hadd_job)
+            cmsrun_dag.add_job(final_hadd_job, retry=2,
+                               requires=inter_hadd_jobs if inter_hadd_jobs else None)
+
+            # Add jobs to remove intermediate files
+            rm_jobs = haddaway.create_intermediate_cleanup_jobs(inter_hadd_jobs)
+            if len(rm_jobs) > 0:
+                rm_condor_file = os.path.join(script_dir, "rm_{timestamp}.condor".format(**USER_DICT))
+                log_stem = "rm.$(cluster).$(process)"
+                rm_jobset = ht.JobSet(exe="hadoop", copy_exe=False,
+                                      filename=rm_condor_file,
+                                      out_dir=args.log, out_file=log_stem + '.out',
+                                      err_dir=args.log, err_file=log_stem + '.err',
+                                      log_dir=args.log, log_file=log_stem + '.log',
+                                      cpus=1, memory='100MB', disk='10MB',
+                                      transfer_hdfs_input=False,
+                                      share_exe_setup=False,
+                                      hdfs_store=args.outputDir)
+            for job in rm_jobs:
+                rm_jobset.add_job(job)
+                cmsrun_dag.add_job(job, requires=final_hadd_job, retry=2)
 
     ###########################################################################
     # Submit unless dry run
