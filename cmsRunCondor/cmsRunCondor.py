@@ -221,16 +221,15 @@ def check_args(args):
                                  ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
                                   'unitsPerJob', 'totalUnits', 'secondaryDataset'])
 
-    args.outputScript = os.path.abspath(args.outputScript)
-
     if args.filelist:
         args.filelist = os.path.abspath(args.filelist)
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
 
     # for now, restrict output dir to /hdfs
+    args.outputDir = os.path.abspath(args.outputDir)
     if not args.outputDir.startswith('/hdfs'):
-        raise RuntimeError('Output directory (--outputDir) not on /hdfs')
+        raise RuntimeError('Output directory %s must be on /hdfs' % args.outputDir)
     # Note that htcondenser takes care of directory creation
     # for condor scipts, dag, logs, output
 
@@ -257,15 +256,15 @@ def check_args(args):
             log.warning("You didn't specify a DAG filename, auto-generated one at %s", generate_dag_filename(USER_DICT))
             args.dag = generate_dag_filename(USER_DICT)
         args.dag = os.path.abspath(args.dag)
-        if os.path.abspath(args.dag).startswith("/hdfs") or os.path.abspath(args.dag).startswith("/users"):
-            raise IOError("You cannot put %s on /users or /hdfs", args.dag)
+        if os.path.abspath(args.dag).startswith(("/hdfs", "/users")):
+            raise IOError("You cannot put %s on /users or /hdfs" % args.dag)
 
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
 
     for f in [args.outputScript, args.log]:
-        if f and (os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users")):
-            raise IOError("You cannot put %s on /users or /hdfs", f)
+        if f and os.path.abspath(f).startswith(("/hdfs", "/users")):
+            raise IOError("You cannot put %s on /users or /hdfs" % f)
 
     if '--outputScript' not in sys.argv:
         log.warning("You didn't specify a condor script, auto-generated one at %s", generate_script_filename(USER_DICT))
@@ -277,7 +276,7 @@ def check_args(args):
 def is_url(path):
     """Test if path is URL or not"""
     # this is a pretty crap test, can do better?
-    return path.startswith('http') or path.startswith('www')
+    return path.startswith(('http', 'www'))
 
 
 class DatasetFile(object):
@@ -1002,7 +1001,6 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 hadd_jobset.add_job(job)
                 cms_jobs = [d['job'] for d in job_output_dicts
                             if d[args.hadd] in job.input_files]
-                print cms_jobs
                 # use retry=2 to allow for hadoop failures, but any more than
                 # that and something is suspect
                 cmsrun_dag.add_job(job, requires=cms_jobs, retry=2)
