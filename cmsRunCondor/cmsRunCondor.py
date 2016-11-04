@@ -135,8 +135,8 @@ class ArgParser(argparse.ArgumentParser):
                                   "Should be on /storage or /scratch. "
                                   "Will auto-generate DAG filename "
                                   "if no argument specified (%s)" % generate_dag_filename(USER_DICT),
-                                  nargs='?',
-                                  const=generate_dag_filename(USER_DICT))
+                                  nargs='?', default=argparse.SUPPRESS)#,
+                                  # const=generate_dag_filename(USER_DICT))
         output_group.add_argument('--log',
                                   help="Location to store job stdout/err/log files. "
                                   "Should be on /storage or /scratch",
@@ -233,25 +233,34 @@ def check_args(args):
     args.outputScript = os.path.abspath(args.outputScript)
     args.log = os.path.abspath(args.log)
 
-    if args.dag:
+    # --dag is a little bit different, since the user may not necessarily want one.
+    # So if --dag isn't used, then it won't be in args
+    # If it is used, it may or may not have a filename attached
+    # If not, then we need to auto-generate one for the user, and alert them to
+    # this fact
+    if args.hadd and 'dag' not in args:
+        raise RuntimeError("--dag required for hadd-ing jobs")
+
+    if 'dag' in args:
+        if args.dag is None:
+            log.warning("You didn't specify a DAG filename, auto-generated one at %s", generate_dag_filename(USER_DICT))
+            args.dag = generate_dag_filename(USER_DICT)
         args.dag = os.path.abspath(args.dag)
+        if os.path.abspath(args.dag).startswith("/hdfs") or os.path.abspath(args.dag).startswith("/users"):
+            raise IOError("You cannot put %s on /users or /hdfs", args.dag)
 
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
 
-    for f in [args.outputScript, args.dag, args.log]:
-        if f:
-            if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
-                raise IOError("You cannot put %s on /users or /hdfs", f)
+    for f in [args.outputScript, args.log]:
+        if f and (os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users")):
+            raise IOError("You cannot put %s on /users or /hdfs", f)
 
     if '--outputScript' not in sys.argv:
         log.warning("You didn't specify a condor script, auto-generated one at %s", generate_script_filename(USER_DICT))
 
     if '--log' not in sys.argv:
         log.warning("You didn't specify a log directory, auto-generated one at %s", generate_log_dir(USER_DICT))
-
-    if '--dag' in sys.argv:
-        log.warning("You didn't specify a DAG filename, auto-generated one at %s", generate_dag_filename(USER_DICT))
 
 
 def is_url(path):
@@ -857,7 +866,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     # Setup DAG if needed
     ###########################################################################
     cmsrun_dag = None
-    if args.dag:
+    if 'dag' in args:
         if args.filelist:
             job_name = os.path.splitext(os.path.basename(args.filelist))[0][:20]
         elif args.callgrind:
@@ -932,14 +941,19 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         )
 
         cmsrun_jobs.add_job(job)
-        if args.dag:
+        if cmsrun_dag is not None:
             cmsrun_dag.add_job(job, retry=5)
 
     ###########################################################################
     # Submit unless dry run
     ###########################################################################
-    if not args.dry:
-        if args.dag:
+    if args.dry:
+        if 'dag' in args:
+            cmsrun_dag.write()
+        else:
+            cmsrun_jobs.write(dag_mode=False)
+    else:
+        if 'dag' in args:
             cmsrun_dag.submit()
         else:
             cmsrun_jobs.submit()
