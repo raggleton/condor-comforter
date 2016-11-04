@@ -1,6 +1,6 @@
 # condor-comforter
 Helper routines for using condor at Bristol, particularly aimed at CMS users.
-Most things require the [`htcondenser`](https://github.com/raggleton/htcondenser) Python package.
+Most things use the [`htcondenser`](https://github.com/raggleton/htcondenser) Python package.
 
 Please report any issues, and add any helpful scripts for other users!
 
@@ -13,7 +13,7 @@ Easiest way is via `pip`. If you don't have `pip`, you can use the one in `/soft
 ```
 pip install -U --process-dependency-links --user git+https://github.com/BristolComputing/condor-comforter.git
 ```
-The same command can also be used to update the package.
+The same command can also be used to update the package. This will also auto-install [`htcondenser`](https://github.com/raggleton/htcondenser) if you don't already have it.
 
 Note that if you see:
 
@@ -39,7 +39,7 @@ cmsRunCondor.py pset_tutorial_analysis.py \
 --dataset /QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISpring16MiniAODv2-PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/MINIAODSIM \
 --totalUnits 10 --unitsPerJob 5 --splitByFiles \
 --outputDir /hdfs/user/$LOGNAME/cmsRunCondor \
---dag
+--dag --hadd output
 ```
 
 You can then monitor job progress with `DAGstatus` (part of [`htcondenser`](https://github.com/raggleton/htcondenser) package)
@@ -64,7 +64,7 @@ Features currently supported:
 
 - Just run with whatever is in your config (e.g. to stop hogging resources on `soolin`)
 
-- hadd the output from jobs (need to specify which module's output you want to hadd)
+- hadd the output from jobs in smaller batches (need to specify which module's output you want to hadd)
 
 ##haddaway
 
