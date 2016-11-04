@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from glob import glob
 
 setup(
     name='condor-comforter',
@@ -10,7 +9,6 @@ setup(
     author='Robin Aggleton',
     author_email='',
     url='https://github.com/BristolComputing/condor-comforter',
-    py_modules=['cmsRunCondor', 'haddaway'],
-    scripts=['cmsRunCondor/cmsRunCondor.py', 'haddaway/haddaway.py'],
-    include_package_data=True,
+    py_modules=['cmsRunCondor.cmsRunCondor', 'haddaway.haddaway'],
+    scripts=['cmsRunCondor/cmsRunCondor.py', 'haddaway/haddaway.py']
 )
