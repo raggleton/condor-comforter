@@ -11,9 +11,17 @@ Robin Aggleton
 Easiest way is via `pip`. If you don't have `pip`, you can use the one in `/software/miniconda/bin/pip`.
 
 ```
-pip install -U --user git+https://github.com/BristolComputing/condor-comforter.git@setup
+pip install -U --process-dependency-links --user git+https://github.com/BristolComputing/condor-comforter.git
 ```
 The same command can also be used to update the package.
+
+Note that if you see:
+
+```
+  DEPRECATION: Dependency Links processing has been deprecated and will be removed in a future release.
+```
+
+it can be safely ignored.
 
 After this, `cmsRunCondor.py` and `haddaway.py` should be available like any other command.
 One can also import them as python modules for further extension.
@@ -55,6 +63,8 @@ Features currently supported:
 - Profile cmsRun jobs with valgrind or callgrind
 
 - Just run with whatever is in your config (e.g. to stop hogging resources on `soolin`)
+
+- hadd the output from jobs (need to specify which module's output you want to hadd)
 
 ##haddaway
 
