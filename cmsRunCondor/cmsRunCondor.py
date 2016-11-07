@@ -126,8 +126,8 @@ class ArgParser(argparse.ArgumentParser):
                                   help="Where you want your output to be stored. "
                                   "Must be on /hdfs.",
                                   required=True)
-        output_group.add_argument("--outputScript",
-                                  help="Name of condor submission script. "
+        output_group.add_argument("--condorScript",
+                                  help="Specify condor submission script filename. "
                                   "Should be on /storage or /scratch",
                                   default=generate_script_filename(USER_DICT))
         output_group.add_argument("--dag",
@@ -210,7 +210,7 @@ def check_args(args):
                                  ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
                                   'unitsPerJob', 'totalUnits', 'secondaryDataset'])
 
-    args.outputScript = os.path.abspath(args.outputScript)
+    args.condorScript = os.path.abspath(args.condorScript)
 
     if args.filelist:
         args.filelist = os.path.abspath(args.filelist)
@@ -230,7 +230,7 @@ def check_args(args):
         flag_dependent_args(args, ['dataset'], ['secondaryDataset'])
         log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
 
-    args.outputScript = os.path.abspath(args.outputScript)
+    args.condorScript = os.path.abspath(args.condorScript)
     args.logDir = os.path.abspath(args.logDir)
 
     if args.dag:
@@ -239,12 +239,12 @@ def check_args(args):
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
 
-    for f in [args.outputScript, args.dag, args.logDir]:
+    for f in [args.condorScript, args.dag, args.logDir]:
         if f:
             if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
                 raise IOError("You cannot put %s on /users or /hdfs" % f)
 
-    if '--outputScript' not in sys.argv:
+    if '--condorScript' not in sys.argv:
         log.warning("You didn't specify a condor script, auto-generated one at %s", generate_script_filename(USER_DICT))
 
     if '--log' not in sys.argv:
@@ -882,7 +882,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     cmsrun_jobs = ht.JobSet(
         exe=os.path.join(script_dir, 'cmsRun_worker.sh'),
         copy_exe=True,
-        filename=args.outputScript,
+        filename=args.condorScript,
         out_dir=args.logDir, out_file='cmsRun.$(cluster).$(process).out',
         err_dir=args.logDir, err_file='cmsRun.$(cluster).$(process).err',
         log_dir=args.logDir, log_file='cmsRun.$(cluster).$(process).log',
