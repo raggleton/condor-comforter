@@ -242,7 +242,7 @@ def check_args(args):
     for f in [args.outputScript, args.dag, args.log]:
         if f:
             if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
-                raise IOError("You cannot put %s on /users or /hdfs", f)
+                raise IOError("You cannot put %s on /users or /hdfs" % f)
 
     if '--outputScript' not in sys.argv:
         log.warning("You didn't specify a condor script, auto-generated one at %s", generate_script_filename(USER_DICT))
