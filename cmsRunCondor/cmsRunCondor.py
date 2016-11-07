@@ -123,8 +123,8 @@ class ArgParser(argparse.ArgumentParser):
                                                "Options for outputs")
 
         output_group.add_argument("--outputDir",
-                                  help="Where you want your output to be stored. "
-                                  "Must be on /hdfs.",
+                                  help="Where you want your cmsRun ROOT output files "
+                                  " to be stored. Must be on /hdfs.",
                                   required=True)
         output_group.add_argument("--condorScript",
                                   help="Specify condor submission script filename. "
@@ -134,7 +134,7 @@ class ArgParser(argparse.ArgumentParser):
                                   help="Specify DAG filename if you want to run as a condor DAG. "
                                   "Should be on /storage or /scratch. "
                                   "Will auto-generate DAG filename "
-                                  "if no argument specified (%s)" % generate_dag_filename(USER_DICT),
+                                  "if no argument specified (default: %s)" % generate_dag_filename(USER_DICT),
                                   nargs='?',
                                   const=generate_dag_filename(USER_DICT))
         output_group.add_argument('--logDir',
