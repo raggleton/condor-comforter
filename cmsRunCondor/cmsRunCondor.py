@@ -137,8 +137,8 @@ class ArgParser(argparse.ArgumentParser):
                                   "if no argument specified (%s)" % generate_dag_filename(USER_DICT),
                                   nargs='?',
                                   const=generate_dag_filename(USER_DICT))
-        output_group.add_argument('--log',
-                                  help="Location to store job stdout/err/log files. "
+        output_group.add_argument('--logDir',
+                                  help="Directory to store job stdout/err/log files. "
                                   "Should be on /storage or /scratch",
                                   default=generate_log_dir(USER_DICT))
 
@@ -231,7 +231,7 @@ def check_args(args):
         log.info("Running 2-file solution with secondary dataset %s", args.secondaryDataset)
 
     args.outputScript = os.path.abspath(args.outputScript)
-    args.log = os.path.abspath(args.log)
+    args.logDir = os.path.abspath(args.logDir)
 
     if args.dag:
         args.dag = os.path.abspath(args.dag)
@@ -239,7 +239,7 @@ def check_args(args):
     if args.lumiMask and not is_url(args.lumiMask):
         args.lumiMask = os.path.abspath(args.lumiMask)
 
-    for f in [args.outputScript, args.dag, args.log]:
+    for f in [args.outputScript, args.dag, args.logDir]:
         if f:
             if os.path.abspath(f).startswith("/hdfs") or os.path.abspath(f).startswith("/users"):
                 raise IOError("You cannot put %s on /users or /hdfs" % f)
@@ -883,9 +883,9 @@ def cmsRunCondor(in_args=sys.argv[1:]):
         exe=os.path.join(script_dir, 'cmsRun_worker.sh'),
         copy_exe=True,
         filename=args.outputScript,
-        out_dir=args.log, out_file='cmsRun.$(cluster).$(process).out',
-        err_dir=args.log, err_file='cmsRun.$(cluster).$(process).err',
-        log_dir=args.log, log_file='cmsRun.$(cluster).$(process).log',
+        out_dir=args.logDir, out_file='cmsRun.$(cluster).$(process).out',
+        err_dir=args.logDir, err_file='cmsRun.$(cluster).$(process).err',
+        log_dir=args.logDir, log_file='cmsRun.$(cluster).$(process).log',
         cpus=1, memory='2GB', disk='3GB',
         # cpus=1, memory='1GB', disk='500MB',
         certificate=True,
