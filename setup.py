@@ -12,5 +12,8 @@ setup(
     py_modules=['cmsRunCondor.cmsRunCondor', 'haddaway.haddaway'],
     scripts=['cmsRunCondor/cmsRunCondor.py', 'haddaway/haddaway.py'],
     install_requires=['htcondenser>=0.3.0'],
-    dependency_links=['git+https://github.com/raggleton/htcondenser#egg=htcondenser-0.3.0']
+    dependency_links=['git+https://github.com/raggleton/htcondenser#egg=htcondenser-0.3.0'],
+    data_files=[
+        ('bin', ['cmsRunCondor/cmsRun_worker.sh'])
+    ]
 )
