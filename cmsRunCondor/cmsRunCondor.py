@@ -217,6 +217,15 @@ def check_args(args):
         if not os.path.isfile(args.filelist):
             raise IOError("Cannot find filelist %s" % args.filelist)
 
+        if not args.splitByFiles:
+            log.warning("You didn't specify --splitByFiles, but since you're using "
+                        "--filelist I'm going to split jobs by number of files anyway")
+        args.splitByFiles = True
+
+    elif args.dataset:
+      if not args.splitByFiles and not args.splitByLumis:
+          raise RuntimeError("If using --dataset, need either --splitByFiles or --splitByLumis")
+
     # for now, restrict output dir to /hdfs
     if not args.outputDir.startswith('/hdfs'):
         raise RuntimeError('Output directory (--outputDir) not on /hdfs')
