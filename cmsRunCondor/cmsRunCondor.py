@@ -59,9 +59,9 @@ class ArgParser(argparse.ArgumentParser):
                                    help="Pass in a list of filenames to run over. "
                                    "This will ignore --dataset/--secondaryDataset/"
                                    "--lumiMask/--runRange options.")
-        input_sources.add_argument("--useConfig",
-                                   help="Use the input files and number of events "
-                                   "specified in the config file."
+        input_sources.add_argument("--asIs",
+                                   help="Use the exact input files and number of events "
+                                   "specified in the config file (i.e. \"as-is\"). "
                                    "This will ignore --dataset, totalUnits, unitsPerJob, etc",
                                    action='store_true')
 
@@ -145,7 +145,7 @@ class ArgParser(argparse.ArgumentParser):
         other_group = self.add_argument_group("MISC\n"+'-'*bar_length)
 
         other_group.add_argument("--verbose", "-v",
-                                 help="Extra printout to clog up your screen.",
+                                 help="Extra printout to help debug problems.",
                                  action='store_true')
         other_group.add_argument("--dry",
                                  help="Dry-run: only make condor submission script, "
@@ -206,7 +206,7 @@ def check_args(args):
     flag_mutually_exclusive_args(args, ['filelist'], ['splitByLumis', 'lumiMask', 'runRange'])
 
     flag_mutually_exclusive_args(args,
-                                 ['useConfig', 'valgrind', 'callgrind'],
+                                 ['asIs', 'valgrind', 'callgrind'],
                                  ['splitByFiles', 'splitByLumis', 'lumiMask', 'runRange',
                                   'unitsPerJob', 'totalUnits', 'secondaryDataset'])
 
@@ -771,7 +771,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
     # This could probably be done better!
 
-    if not args.valgrind and not args.callgrind and not args.useConfig:
+    if not args.valgrind and not args.callgrind and not args.asIs:
         list_of_files, list_of_secondary_files = None, None
         list_of_lumis = None
 
@@ -873,7 +873,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
             job_name = "callgrind"
         elif args.valgrind:
             job_name = "valgrind"
-        elif args.useConfig:
+        elif args.asIs:
             job_name = "cmsRun_%s" % strftime("%H%M%S")
         else:
             job_name = args.dataset[1:].replace("/", "_").replace("-", "_")
@@ -918,7 +918,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
                 args_str += ' -l ' + os.path.basename(lumilist_filename)
             elif is_url(args.lumiMask):
                 args_str += ' -l ' + args.lumiMask
-        if args.useConfig:
+        if args.asIs:
             args_str += ' -u'
         if args.valgrind:
             args_str += ' -m'
