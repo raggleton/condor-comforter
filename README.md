@@ -62,7 +62,7 @@ Features currently supported:
 
 - Profile cmsRun jobs with valgrind or callgrind
 
-- Just run with whatever is in your config (e.g. to stop hogging resources on `soolin`)
+- Just run with whatever is in your config (`--asIs`) e.g. to stop hogging resources on `soolin`
 
 - hadd the output from jobs in smaller batches (need to specify which module's output you want to hadd)
 
