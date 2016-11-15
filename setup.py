@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='condor-comforter',
-    version='0.2',
+    version='0.3',
     description="Some helper scripts for running HTCondor jobs",
     author='Robin Aggleton',
     author_email='',
