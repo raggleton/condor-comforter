@@ -987,6 +987,8 @@ def cmsRunCondor(in_args=sys.argv[1:]):
     if args.hadd:
         if args.hadd not in output_file_dict:
             log.warning("%s module not in CMSSW config - will not be hadding" % args.hadd)
+        elif len(job_output_dicts) == 1:
+            log.info("Only 1 output file - no hadding jobs required")
         else:
             log.info("Creating hadding jobs for output from process.%s", args.hadd)
             input_files = [d[args.hadd] for d in job_output_dicts]
@@ -1020,7 +1022,7 @@ def cmsRunCondor(in_args=sys.argv[1:]):
 
             hadd_jobset.add_job(final_hadd_job)
             cmsrun_dag.add_job(final_hadd_job, retry=2,
-                               requires=inter_hadd_jobs if inter_hadd_jobs else None)
+                               requires=inter_hadd_jobs if inter_hadd_jobs else [d['job'] for d in job_output_dicts])
 
             # Add jobs to remove intermediate files
             rm_jobs = haddaway.create_intermediate_cleanup_jobs(inter_hadd_jobs)
